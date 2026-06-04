@@ -1,0 +1,183 @@
+---
+# =============================================================================
+# vars/app_catalog.yml — Unified Application Catalog
+# =============================================================================
+# This is the ONLY file you need to edit to add/remove applications.
+#
+# Structure per category:
+#   rpm:     list of dnf package names (leave empty [] if none)
+#   flatpak: list of Flatpak app IDs   (leave empty [] if none)
+#
+# Tags map 1:1 to category keys. To install a category:
+#   ansible-playbook fedora-do.yml --ask-become-pass --tags tools
+#   ansible-playbook fedora-do.yml --ask-become-pass --tags "tools,media,graphics"
+#
+# 'base' and 'always' sections are never skipped.
+# =============================================================================
+
+app_catalog:
+
+  # ── Base utilities (always installed, not individually taggable) ────────────
+  base:
+    rpm:
+      # Part of the base OS install:
+      # - nano
+      # - vim-enhanced
+      # - git
+      # - curl
+      # - wget
+      # - gzip
+      # - tar
+      # - unzip
+      # - fuse
+      # - fuse3
+      # - fuse3-libs
+      # - cifs-utils
+      # - nfs-utils
+      # - pciutils
+      # - smartmontools
+      # - usbutils
+      # - bind-utils
+      # - iputils
+      # - net-tools
+      # - traceroute
+      # - lsof
+      # Additional:
+      - htop
+      - p7zip
+      - p7zip-plugins
+    flatpak: []
+
+  # ── System tools, utilities & virtualization ───────────────────────────────
+  tools:
+    rpm:
+      # - rclone # Sync, transfer, and manage files between your local storage and cloud storage providers
+      # - timeshift # Use as alternative to btrfs-assistant for more basic functionality. Don't install both
+      - btrfs-assistant
+      - eza # Replacement for the traditional Linux ls command for organized, human-readable display
+      - bat # Replacement for the traditional Linux cat (concatenate) command with syntax highlghting
+      - fzf # Fuzzy Finder is a blazing-fast, general-purpose command-line filter
+      - fastfetch # System information tool for your terminal
+      - pavucontrol # Required to get my S/PIDF 5.1 surround sound working
+      - alsa-plugins-pulseaudio # Dependency to get 5.1 surround sound working
+      - alsa-plugins-a52 # Dependency to get 5.1 surround sound working
+      - cockpit-packagekit # Cockpit client addin for package updates
+      - cockpit-machines # Cockpit client addin to manage virtual machines
+      - cockpit-podman # Cockpit client addin to manage podman containers
+      - cockpit-sosreport # Cockpit client addin for diagnostic reports
+      - cockpit-files # Cockpit client addin to manage files
+      - tldr # Community driven alternative to man pages with short, practical, and ready-to-use command examples
+      - restic # Command-line backup program - fast, efficient, secure, and verifiably accurate with deduplication capabilities
+      - syncthing # Continuous file synchronization program between workstation and my nas.
+      
+    flatpak:
+      - io.github.kolunmi.Bazaar # Flatpak app store and manager
+      - io.github.flattool.Warehouse # Manage flatpaks including version control
+      - com.github.tchx84.Flatseal # View and modify the security permissions of your installed Flatpak applications
+      - it.mijorus.gearlever # Organize, integrate, and manage AppImage files
+      - com.ranfdev.DistroShelf # Graphical interface for managing Distrobox containers
+      - io.github.cboxdoerfer.FSearch # Graphical file search application - closest alternative to everything search on windows
+      - io.github.martchus.syncthingtray # System tray status and informatin for syncthing
+      - doublecmd-qt6 # Dual pane file manager - requires qt6 optimizations to enable dark mode
+      - org.kde.dolphin #  KDE's file manager - more capable and feature rich than the Gnome default
+      - org.kde.filelight # Visualize disk usage to make cleanup easier.
+      - org.kde.kwrite # Text editor with syntax highlighting and auto-indentation (Basically kate without the extra features)
+      - io.github.zyedidia.micro # Micro - excellent terminal based text editor - nicer to use than nano
+      - org.gnome.meld # Amazing text and directory comparison tool
+      - org.cockpit_project.CockpitClient # Web-based graphicsl server interface via ssh for  containers, virtual machines etc.
+      - io.github.pwr_solaar.solaar # Logitech keyboard, mouse and trackpad management and monitoring
+      # - org.gnome.DejaDup # Simple backup tool for (encrypted, off-site, and regular) bakups using Restic
+      # - org.gnome.Boxes # Flatpak version can replace the default installed version if only basic functionalityis required.
+
+  # ── Desktop customization & management ─────────────────────────────────────
+  desktop:
+    rpm:
+      - gnome-tweaks # Configure Gnome built-in hidden desktop options
+      - dconf-editor # Useful for determining Gnome customization settings for the gnome.yml config
+      # - seahorse # Manage encryption keys, SSH profiles, or debug app logins
+    flatpak:
+      - io.github.peazip.PeaZip # More advanced archive management than the default Gnome file-roller
+      - com.mattjakeman.ExtensionManager # Manage Gnome external desktop extensions
+
+  # ── Development ─────────────────────────────────────────────────────────────
+  development:
+    rpm:
+      - code # VS Code — requires Microsoft repo (added in repos.yml)
+      # - gcc
+      # - gcc-c++
+      # - make
+      # - cmake
+      # - nodejs
+      # - npm
+      # - golang
+      # - python3-devel
+    flatpak:
+      # - com.visualstudio.code # Visual Studio Code. Challenges with integrating the flatpak with docker for testing. Prefer the RPM version
+
+  # ── Productivity & office ───────────────────────────────────────────────────
+  productivity:
+    rpm: []
+    flatpak:
+      - org.libreoffice.LibreOffice # Powerful office suite. Install as flatpak and remove the system installed version if required.
+      - com.ticktick.TickTick # To-do & task management
+      - com.bitwarden.desktop # Safely store logins and passwords and them sync them between all of your devices. Compatible with the self-hosted vaultwarden
+      - md.obsidian.Obsidian # Powerful knowledge base that works on top of a local folder of plain text Markdown files
+      - com.logseq.Logseq # A ocal-first, non-linear, outliner notebook for organizing and sharing your personal knowledge base.
+      - com.github.marktext.marktext # Realtime preview markdown editor
+      - com.actualbudget.actual # Privacy-focused budgeting app front end for my actual budget privately hosted web instance
+      - com.github.johnfactotum.Foliate # Modern e-book reader tailored for GNOME
+      - org.kde.okular # View and annotate documents. I like it as a PDF reader.
+
+  # ── Internet & Communication ────────────────────────────────────────────────
+  communication:
+    rpm:
+      - brave-browser # Requires Brave repo (added in repos.yml). RPM version used to support PWA (web apps)
+    flatpak:
+      - com.vivaldi.Vivaldi # Feature-packed web browser
+      - one.ablaze.floorp # Customizable Firefox-based browser from Japan
+      - com.google.Chrome # Chrome web browser
+      # - org.mozilla.firefox # Firefox web browser. I prefer to use the OS installed version for disposable web sessions.
+      # - org.chromium.Chromium # Open source web browser
+      # - org.signal.Signal # Free and instantaneous communication anywhere in the world
+      # - com.discordapp.Discord # All in one messaging, voice, and video client
+
+  # ── Graphics, CAD & image editing ───────────────────────────────────────────
+  graphics:
+    rpm: []
+    flatpak:
+      - org.nomacs.ImageLounge # Free, open source image viewer
+      - org.kde.krita # Full-featured digital art studio
+      - org.freecad.FreeCAD # Parametric 3D modeler
+      # - flathub org.gimp.GIMP # GNU Image Manipulation Program
+      # - org.inkscape.Inkscape # Vector graphics editor
+      # - org.darktable.Darktable # Manage and raw files and images in a databace and develop/enhance them
+      # - com.obsproject.Studio # Video capturing, recording, and live streaming
+
+  # ── Media playback & editing ────────────────────────────────────────────────
+  media:
+    rpm:
+      # - vlc # Multimedia player - flatpak alternative below
+      - mpv # Multimedia player - flatpak alternative below
+      - haruna # # Front-end for MPV
+    flatpak:
+      # - org.videolan.VLC
+      # - io.mpv.Mpv # Multimedia player - prefer RPM for easier sound customization and 5.1 sound setup
+      # - org.kde.haruna # Front-end for MPV - prefer RPM for easier integration with mpv and double commander
+      - org.jellyfin.JellyfinDesktop # Jellyfin desktop client for Jellyfin media server
+      # - io.github.celluloid_player.Celluloid # GTK front-end for MPV
+      # - io.github.zaps166.QMPlay2 # Video and audio player with lots of features
+      # - org.gnome.Lollypop # Play and organize your music collection
+      # - org.gnome.Rhythmbox3 # Music management application
+      - fr.handbrake.ghb # Video transcoder
+      # - org.kde.kdenlive # Video editor
+      - io.github.aandrew_me.ytdn # Download videos and audios from hundreds of sites
+
+  # ── Gaming ──────────────────────────────────────────────────────────────────
+  gaming:
+    rpm:
+      # - steam
+      # - lutris
+    flatpak:
+      # - com.valvesoftware.Steam
+      # - net.lutris.Lutris
+      # - org.libretro.RetroArch

@@ -44,7 +44,7 @@
   pre_tasks:
     - name: "Pre | Load application catalog"
       ansible.builtin.include_vars:
-        file: vars/packages.yml
+        file: vars/app_catalog.yml
       tags: always
 
     - name: "Pre | Load SMB share definitions"

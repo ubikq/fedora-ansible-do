@@ -8,7 +8,9 @@
 # =============================================================================
 
 # ── RPM Fusion + multimedia (grouped: FFmpeg/codecs depend on RPM Fusion) ─────
-- block:
+- name: "Repos | RPM Fusion and multimedia setup"
+  tags: always
+  block:
     - name: "Repos | Enable RPM Fusion Free"
       become: true
       ansible.builtin.dnf:
@@ -51,10 +53,26 @@
     - name: "Repos | Record RPM Fusion / multimedia setup failure"
       ansible.builtin.set_fact:
         _run_errors: "{{ (_run_errors | default([])) + ['RPM Fusion / multimedia repo setup failed — media codecs and FFmpeg may be missing'] }}"
-  tags: always
+
+# ── Brave Browser repository ───────────────────────────────────────────────────
+- name: "Repos | Brave Browser repository setup"
+  tags: [always, communication]
+  block:
+    - name: "Repos | Add Brave Browser repository"
+      become: true
+      ansible.builtin.get_url:
+        url: "https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo"
+        dest: /etc/yum.repos.d/brave-browser.repo
+        mode: '0644'
+  rescue:
+    - name: "Repos | Record Brave Browser repository failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['Brave Browser repository setup failed — brave-browser may not install'] }}"
 
 # ── VS Code repository ─────────────────────────────────────────────────────────
-- block:
+- name: "Repos | VS Code repository setup"
+  tags: [always, development]
+  block:
     - name: "Repos | Add Microsoft VS Code repository"
       become: true
       ansible.builtin.yum_repository:
@@ -68,4 +86,3 @@
     - name: "Repos | Record VS Code repository failure"
       ansible.builtin.set_fact:
         _run_errors: "{{ (_run_errors | default([])) + ['VS Code repository setup failed — VS Code may not install'] }}"
-  tags: always

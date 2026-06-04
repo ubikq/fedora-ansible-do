@@ -2,7 +2,7 @@
 
 ## About This Project
 
-This Ansible playbook automates the post-install configuration of Fedora Workstation, systematically transforming a stock setup into a fully provisioned environment. To keep the project clean and maintainable, all application lists are centralized in a single file (`vars/packages.yml`), while the logic is organized into dedicated task and variable files. 
+This Ansible playbook automates the post-install configuration of Fedora Workstation, systematically transforming a stock setup into a fully provisioned environment. To keep the project clean and maintainable, all application lists are centralized in a single file (`vars/app_catalog.yml`), while the logic is organized into dedicated task and variable files. 
 
 ### Key Capabilities
 
@@ -53,7 +53,7 @@ fedora-setup/
 ├── .gitignore
 │
 ├── vars/
-│   ├── packages.yml            ← ✏️  Edit this to add/remove apps (RPM + Flatpak)
+│   ├── app_catalog.yml         ← ✏️  Edit this to add/remove apps (RPM + Flatpak)
 │   ├── gnome.yml               ← ✏️  Edit this for GNOME dconf settings
 │   ├── smb.yml                 ← ✏️  Edit this for SMB share definitions
 │   ├── backup.yml              ← ✏️  Edit this for backup/restore paths and retention
@@ -65,7 +65,7 @@ fedora-setup/
     ├── dnf.yml                 ← DNF tuning + system update
     ├── firmware.yml            ← fwupdmgr firmware updates
     ├── repos.yml               ← RPM Fusion, FFmpeg, VS Code repo
-    ├── packages.yml            ← RPM installs (reads from vars/packages.yml)
+    ├── packages.yml            ← RPM installs (reads from vars/app_catalog.yml)
     ├── flatpaks.yml            ← Flathub setup + Flatpak installs (same source)
     ├── docker.yml              ← Docker CE + Compose plugin
     ├── virtualization.yml      ← KVM/QEMU/libvirt stack
@@ -121,15 +121,15 @@ ansible-playbook fedora-do.yml -K -J
 | Tag | What it covers |
 |---|---|
 | `always` | DNF tune, update, RPM Fusion, FFmpeg, base packages, Flathub setup, cleanup — runs in all modes |
-| `all-apps` | Shortcut: installs every app category at once (desktop through gaming) |
-| `desktop` | GNOME tweaks, Extension Manager, Boxes |
-| `tools` | btrfs-assistant, restic, bat, eza, fzf + Flatseal, MissionCenter |
-| `graphics` | GIMP, Inkscape, Darktable + Krita, OBS Studio |
-| `media` | VLC, mpv, HandBrake + Celluloid, Spotify, Kdenlive |
+| `all-apps` | Shortcut: installs every app category at once (tools through gaming) |
+| `tools` | btrfs-assistant, restic, bat, eza, fzf, fastfetch + Flatseal, GearLever |
+| `desktop` | GNOME Tweaks, dconf Editor + PeaZip, Extension Manager |
 | `development` | GCC, Node, Go, Python, VS Code |
-| `productivity` | LibreOffice, Obsidian, Rnote, Evolution |
-| `communication` | Signal, Element, Discord, Zoom |
-| `gaming` | Steam, Lutris, Gamemode, RetroArch |
+| `productivity` | LibreOffice, Obsidian |
+| `communication` | Signal, Discord |
+| `graphics` | Krita, GIMP, Inkscape, Darktable, OBS Studio |
+| `media` | mpv + Haruna, HandBrake, VLC, Kdenlive |
+| `gaming` | Steam, Lutris, RetroArch |
 | `docker` | Docker CE, containerd, compose plugin |
 | `virt` | KVM/QEMU, libvirt, virt-manager — full virtualisation stack |
 | `smb` | Credential files, fstab entries, mounts |
@@ -201,7 +201,7 @@ ansible-playbook fedora-do.yml -K -J --tags rpm-restore
 
 ## Adding Applications
 
-Open **`vars/packages.yml`** — this is the only file you need to edit for apps.
+Open **`vars/app_catalog.yml`** — this is the only file you need to edit for apps.
 
 Each category has two lists:
 
@@ -220,7 +220,7 @@ category, leave `flatpak: []`. To skip RPMs, leave `rpm: []`.
 
 ### Adding a New Category
 
-1. Add a block in `vars/packages.yml`:
+1. Add a block in `vars/app_catalog.yml`:
    ```yaml
    security:
      rpm:
@@ -291,7 +291,7 @@ credential file only once.
 
 Backs up and restores application configuration to/from a network share. All operations are tagged `never` and **will not run** during a normal full run — they must be explicitly requested.
 
-- **Flatpak**: config from `~/.var/app/<app-id>/` — app list sourced from `vars/packages.yml`
+- **Flatpak**: config from `~/.var/app/<app-id>/` — app list sourced from `vars/app_catalog.yml`
 - **RPM**: config paths declared in `vars/rpm_configs.yml` — opt-in registry, supports multiple directories per app
 
 ### Configuration

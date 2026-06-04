@@ -3,7 +3,7 @@
 # tasks/flatpaks.yml — Flatpak Setup & Application Installation
 # =============================================================================
 # Ensures flatpak is installed, adds Flathub as a system-wide remote,
-# then installs Flatpak apps per category from vars/packages.yml (app_catalog).
+# then installs Flatpak apps per category from vars/app_catalog.yml (app_catalog).
 #
 # Each app is installed individually so results are tracked per app ID.
 # A single tracking task per category appends to _changed_flatpaks (installed)
@@ -27,27 +27,6 @@
     method: system
   tags: always
 
-# ── Desktop ───────────────────────────────────────────────────────────────────
-- name: "Flatpak [desktop] | Install Flatpak apps"
-  community.general.flatpak:
-    name: "{{ item }}"
-    state: present
-    method: system
-    remote: flathub
-  loop: "{{ app_catalog.desktop.flatpak | default([], true) }}"
-  register: _fp_desktop
-  failed_when: false
-  tags: desktop
-
-- name: "Flatpak [desktop] | Track results"
-  ansible.builtin.set_fact:
-    _changed_flatpaks: "{{ _changed_flatpaks + ([item.item + ' (desktop)'] if (item.changed | default(false)) else []) }}"
-    _run_errors:       "{{ _run_errors       + (['Flatpak install failed: ' + item.item + ' (desktop)'] if (item.rc | default(0) != 0) else []) }}"
-  loop: "{{ _fp_desktop.results | default([]) }}"
-  loop_control:
-    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
-  tags: desktop
-
 # ── Tools ─────────────────────────────────────────────────────────────────────
 - name: "Flatpak [tools] | Install Flatpak apps"
   community.general.flatpak:
@@ -69,47 +48,26 @@
     label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: tools
 
-# ── Graphics ──────────────────────────────────────────────────────────────────
-- name: "Flatpak [graphics] | Install Flatpak apps"
+# ── Desktop ───────────────────────────────────────────────────────────────────
+- name: "Flatpak [desktop] | Install Flatpak apps"
   community.general.flatpak:
     name: "{{ item }}"
     state: present
     method: system
     remote: flathub
-  loop: "{{ app_catalog.graphics.flatpak | default([], true) }}"
-  register: _fp_graphics
+  loop: "{{ app_catalog.desktop.flatpak | default([], true) }}"
+  register: _fp_desktop
   failed_when: false
-  tags: graphics
+  tags: desktop
 
-- name: "Flatpak [graphics] | Track results"
+- name: "Flatpak [desktop] | Track results"
   ansible.builtin.set_fact:
-    _changed_flatpaks: "{{ _changed_flatpaks + ([item.item + ' (graphics)'] if (item.changed | default(false)) else []) }}"
-    _run_errors:       "{{ _run_errors       + (['Flatpak install failed: ' + item.item + ' (graphics)'] if (item.rc | default(0) != 0) else []) }}"
-  loop: "{{ _fp_graphics.results | default([]) }}"
+    _changed_flatpaks: "{{ _changed_flatpaks + ([item.item + ' (desktop)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:       "{{ _run_errors       + (['Flatpak install failed: ' + item.item + ' (desktop)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _fp_desktop.results | default([]) }}"
   loop_control:
     label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
-  tags: graphics
-
-# ── Media ─────────────────────────────────────────────────────────────────────
-- name: "Flatpak [media] | Install Flatpak apps"
-  community.general.flatpak:
-    name: "{{ item }}"
-    state: present
-    method: system
-    remote: flathub
-  loop: "{{ app_catalog.media.flatpak | default([], true) }}"
-  register: _fp_media
-  failed_when: false
-  tags: media
-
-- name: "Flatpak [media] | Track results"
-  ansible.builtin.set_fact:
-    _changed_flatpaks: "{{ _changed_flatpaks + ([item.item + ' (media)'] if (item.changed | default(false)) else []) }}"
-    _run_errors:       "{{ _run_errors       + (['Flatpak install failed: ' + item.item + ' (media)'] if (item.rc | default(0) != 0) else []) }}"
-  loop: "{{ _fp_media.results | default([]) }}"
-  loop_control:
-    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
-  tags: media
+  tags: desktop
 
 # ── Development ───────────────────────────────────────────────────────────────
 - name: "Flatpak [development] | Install Flatpak apps"
@@ -174,6 +132,48 @@
     label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: communication
 
+# ── Graphics ──────────────────────────────────────────────────────────────────
+- name: "Flatpak [graphics] | Install Flatpak apps"
+  community.general.flatpak:
+    name: "{{ item }}"
+    state: present
+    method: system
+    remote: flathub
+  loop: "{{ app_catalog.graphics.flatpak | default([], true) }}"
+  register: _fp_graphics
+  failed_when: false
+  tags: graphics
+
+- name: "Flatpak [graphics] | Track results"
+  ansible.builtin.set_fact:
+    _changed_flatpaks: "{{ _changed_flatpaks + ([item.item + ' (graphics)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:       "{{ _run_errors       + (['Flatpak install failed: ' + item.item + ' (graphics)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _fp_graphics.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
+  tags: graphics
+
+# ── Media ─────────────────────────────────────────────────────────────────────
+- name: "Flatpak [media] | Install Flatpak apps"
+  community.general.flatpak:
+    name: "{{ item }}"
+    state: present
+    method: system
+    remote: flathub
+  loop: "{{ app_catalog.media.flatpak | default([], true) }}"
+  register: _fp_media
+  failed_when: false
+  tags: media
+
+- name: "Flatpak [media] | Track results"
+  ansible.builtin.set_fact:
+    _changed_flatpaks: "{{ _changed_flatpaks + ([item.item + ' (media)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:       "{{ _run_errors       + (['Flatpak install failed: ' + item.item + ' (media)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _fp_media.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
+  tags: media
+
 # ── Gaming ────────────────────────────────────────────────────────────────────
 - name: "Flatpak [gaming] | Install Flatpak apps"
   community.general.flatpak:
@@ -203,13 +203,13 @@
     method: system
     remote: flathub
   loop:
-    - desktop
     - tools
-    - graphics
-    - media
+    - desktop
     - development
     - productivity
     - communication
+    - graphics
+    - media
     - gaming
   when: app_catalog[item].flatpak | default([], true) | length > 0
   register: _all_apps_flatpak
