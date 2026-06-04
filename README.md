@@ -1,8 +1,46 @@
 # Fedora Workstation Setup — Ansible Playbook
 
-Automated post-install configuration for Fedora Workstation. All application
-lists live in a single file (`vars/packages.yml`). Everything else is in
-dedicated task and var files.
+## About This Project
+
+This Ansible playbook automates the post-install configuration of Fedora Workstation, systematically transforming a stock setup into a fully provisioned environment. To keep the project clean and maintainable, all application lists are centralized in a single file (`vars/packages.yml`), while the logic is organized into dedicated task and variable files. 
+
+### Key Capabilities
+
+- **System Maintenance & Upgrades**: Automates the standard system update cycle (`dnf upgrade`), manages official Fedora repositories, and handles package cleanup tasks.
+    
+- **Third-Party Repository Integration**: Safely provisions third-party repositories—specifically enabling **RPM Fusion** (`free` and `nonfree`) to seamlessly unlock restricted media codecs and proprietary hardware drivers (such as Nvidia graphics drivers).
+    
+- **Core Software & Tool Deployment**: Orchestrates the bulk installation of applications, system utilities, and developer dependencies via native package management (`dnf`), eliminating manual setup.
+    
+- **Flatpak Integration**: Configures Flatpak functionality and enables the **Flathub repository**, laying down the framework to install sandbox-isolated desktop applications.
+    
+- **User Environment Personalization**: Deploys localized dotfiles, system preferences, shell configurations, and workflow tools to match a specific user's desktop routine.
+w
+### Planned Roadmap
+
+The following changes are envisioned:
+
+- Add flatpak and package config file backup and restore capabilities
+
+- Incorporate the fantastic _niri_ scrolling tiling compositor with the _DankMaterialShell_ desktop shell
+
+---
+
+## ⚠️ Disclaimer
+
+**Use at your own risk.** This Ansible playbook is designed to configure my personal Fedora 44 environment. Because every system configuration, hardware setup, and user need is different, running this playbook may cause data loss, system instability, or unexpected behavior on your machine. 
+
+Before running this playbook:
+* **Backup your data**: Ensure you have a complete, external backup of all critical files.
+* **Review the tasks**: Read through the YAML files to understand exactly what changes will be made to your system.
+* **Test safely**: If possible, test the playbook inside a virtual machine (VM) first.
+
+The author accepts no liability or responsibility for any damage, data loss, or system breakage caused by using this repository.
+
+### 📦 Third-Party Repositories (RPM Fusion)
+
+This playbook automatically enables the [RPM Fusion](https://rpmfusion.org) repositories. The `nonfree` repository includes proprietary software; the `free` repository may include patent-restricted codecs. By running this playbook you accept responsibility for compliance with your local laws and organisational policies.
+
 
 ---
 
@@ -39,6 +77,8 @@ fedora-setup/
 ---
 
 ## Quick Start
+
+The following is required to use the runbook post-installation of the base OS.
 
 ```bash
 # 1. Install Ansible and required collections
@@ -105,7 +145,47 @@ ansible-playbook fedora-do.yml -K -J
 # ── Mode 1: full run (no --tags = everything) ─────────────────────────────────
 ansible-playbook fedora-do.yml -K -J
 
-# ── Mode 2: specific tasks only ───────────────────────────────────────────────
+# ── Mode 2: specific tasks only ─────────────────────────────────────About This Project
+This Ansible playbook automates the post-install configuration of Fedora Workstation, systematically transforming a stock setup into a fully provisioned environment. To keep the project clean and maintainable, all application lists are centralized in a single file (vars/packages.yml), while the logic is organized into dedicated task and variable files.
+
+Key Capabilities
+System Maintenance & Upgrades: Automates the standard system update cycle (dnf upgrade), manages official Fedora repositories, and handles package cleanup tasks.
+
+Third-Party Repository Integration: Safely provisions third-party repositories—specifically enabling RPM Fusion (free and nonfree) to seamlessly unlock restricted media codecs and proprietary hardware drivers (such as Nvidia graphics drivers).
+
+Core Software & Tool Deployment: Orchestrates the bulk installation of applications, system utilities, and developer dependencies via native package management (dnf), eliminating manual setup.
+
+Flatpak Integration: Configures Flatpak functionality and enables the Flathub repository, laying down the framework to install sandbox-isolated desktop applications.
+
+User Environment Personalization: Deploys localized dotfiles, system preferences, shell configurations, and workflow tools to match a specific user's desktop routine. w
+
+Planned Roadmap
+The following changes are envisioned:
+
+Add flatpak and package config file backup and restore capabilities
+
+Incorporate the fantastic niri scrolling tiling compositor with the DankMaterialShell desktop shell
+
+---
+
+⚠️ Disclaimer
+Use at your own risk. This Ansible playbook is designed to configure my personal Fedora 44 environment. Because every system configuration, hardware setup, and user need is different, running this playbook may cause data loss, system instability, or unexpected behavior on your machine.
+
+Before running this playbook:
+
+Backup your data: Ensure you have a complete, external backup of all critical files.
+Review the tasks: Read through the YAML files to understand exactly what changes will be made to your system.
+Test safely: If possible, test the playbook inside a virtual machine (VM) first.
+The author accepts no liability or responsibility for any damage, data loss, or system breakage caused by using this repository.
+
+📦 Third-Party Repositories (RPM Fusion)
+This playbook automatically enables the RPM Fusion repositories (both free and nonfree).
+
+Please be aware:
+
+Proprietary Software: The nonfree repository contains software that is not Open Source (as defined by the Fedora Project), including proprietary graphics drivers.
+Commercial / Patent Restrictions: The free repository contains open-source software that may be restricted by software patents or legal regulations in certain countries (e.g., specific multimedia codecs).
+Compliance: By running this playbook, you accept responsibility for ensuring that installing and using these packages complies with your local laws and organizational policies.──────────
 # Only tools and media packages
 ansible-playbook fedora-do.yml -K --tags "tools,media"
 
@@ -237,3 +317,21 @@ GVariant format — the same format the `dconf` command uses:
 To enable additional GNOME Shell extensions, add their UUID to
 `gnome_enabled_extensions` in `vars/gnome.yml`. The extension must already be
 installed (either via RPM or Extension Manager).
+
+---
+
+## License
+
+Copyright (C) 2026 Pieter van Heerden
+
+This project is licensed under the **GNU General Public License v2.0 only** (GPL-2.0-only). See the [LICENSE](LICENSE) file for the full text.
+
+In plain terms: you are free to use, modify, and distribute this playbook, but any distributed modifications must also be released under GPL-2.0.
+
+### Third-party content note
+
+This playbook *installs* third-party software at runtime but does not bundle or redistribute any of it. Each piece of software retains its own license. Notably:
+
+- **RPM Fusion nonfree** packages may include proprietary software (see the disclaimer section above).
+- **Fisher** (MIT) and **Tide** (MIT) are downloaded at runtime; their licenses are independent of this project.
+- **Ansible collections** used (`community.general`, `ansible.posix`) are GPL-compatible.

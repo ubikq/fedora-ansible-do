@@ -1,6 +1,8 @@
 ---
 # =============================================================================
 # fedora-do.yml — Master Playbook
+# Copyright (C) 2026 Pieter van Heerden
+# SPDX-License-Identifier: GPL-2.0-only
 # =============================================================================
 # Orchestrates the full Fedora workstation setup by importing task files.
 # All configuration lives in vars/; all logic lives in tasks/.
