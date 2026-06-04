@@ -1,0 +1,28 @@
+---
+# =============================================================================
+# tasks/fonts.yml — Font Installation
+# =============================================================================
+# Installs developer and desktop fonts available in Fedora repos,
+# then rebuilds the fontconfig cache.
+# =============================================================================
+
+- name: "Fonts | Install system fonts"
+  become: true
+  ansible.builtin.dnf:
+    name:
+      - google-noto-sans-fonts
+      - google-noto-serif-fonts
+      - google-noto-mono-fonts
+      - google-roboto-fonts
+      - jetbrains-mono-fonts
+      - fira-code-fonts
+      - cascadia-code-fonts
+    state: present
+  register: fonts_installed
+  tags: fonts
+
+- name: "Fonts | Rebuild font cache"
+  ansible.builtin.command: fc-cache --force
+  changed_when: false
+  when: fonts_installed.changed
+  tags: fonts

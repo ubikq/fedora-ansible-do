@@ -1,0 +1,146 @@
+---
+# =============================================================================
+# fedora-do.yml — Master Playbook
+# =============================================================================
+# Orchestrates the full Fedora workstation setup by importing task files.
+# All configuration lives in vars/; all logic lives in tasks/.
+#
+# Run modes:  (-K = --ask-become-pass,  -J = --ask-vault-pass)
+#
+#   1. FULL RUN — no --tags flag; everything runs:
+#        ansible-playbook fedora-do.yml -K -J
+#
+#   2. SPECIFIC TASKS ONLY — only the listed tags run (plus always):
+#        ansible-playbook fedora-do.yml -K --tags "tools,media"
+#        ansible-playbook fedora-do.yml -K --tags gnome
+#        ansible-playbook fedora-do.yml -K --tags "always,all-apps"
+#
+#   3. FULL RUN, SKIP SOMETHING — everything runs except the skipped tag(s):
+#        ansible-playbook fedora-do.yml -K --skip-tags gaming
+#        ansible-playbook fedora-do.yml -K --skip-tags "virt,firmware"
+#
+# Available tags:
+#   always | all-apps | desktop | tools | graphics | media | development |
+#   productivity | communication | gaming | docker | virt | smb | gnome |
+#   firmware | fonts | shell | git-config
+# =============================================================================
+
+- name: Fedora Workstation Setup
+  hosts: localhost
+  connection: local
+  become: false
+
+  vars:
+    # ── DNF tuning ─────────────────────────────────────────────────────────────
+    dnf_conf_options:
+      max_parallel_downloads: 10
+      fastestmirror: true
+      deltarpm: true
+      keepcache: false
+
+  pre_tasks:
+    - name: "Pre | Load application catalog"
+      ansible.builtin.include_vars:
+        file: vars/packages.yml
+      tags: always
+
+    - name: "Pre | Load SMB share definitions"
+      ansible.builtin.include_vars:
+        file: vars/smb.yml
+      tags: always
+
+    - name: "Pre | Load GNOME settings"
+      ansible.builtin.include_vars:
+        file: vars/gnome.yml
+      tags: always
+
+    - name: "Pre | Load Git configuration (if present)"
+      ansible.builtin.include_vars:
+        file: vars/git.yml
+      failed_when: false
+      tags: always
+
+    - name: "Pre | Load vault secrets (if present)"
+      ansible.builtin.include_vars:
+        file: vars/secrets.yml
+      failed_when: false
+      no_log: true
+      tags: always
+
+    - name: "Pre | Verify running on Fedora"
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == "Fedora"
+        fail_msg: "This playbook targets Fedora Linux only."
+        success_msg: "Confirmed: Fedora {{ ansible_facts.distribution_major_version }}"
+      tags: always
+
+  tasks:
+    - name: "Include | DNF configuration and system update"
+      ansible.builtin.import_tasks: tasks/dnf.yml
+
+    - name: "Include | Firmware updates"
+      ansible.builtin.import_tasks: tasks/firmware.yml
+
+    - name: "Include | Repository setup"
+      ansible.builtin.import_tasks: tasks/repos.yml
+
+    - name: "Include | RPM package installation"
+      ansible.builtin.import_tasks: tasks/packages.yml
+
+    - name: "Include | Flatpak setup and app installation"
+      ansible.builtin.import_tasks: tasks/flatpaks.yml
+
+    - name: "Include | Docker CE and Compose"
+      ansible.builtin.import_tasks: tasks/docker.yml
+
+    - name: "Include | KVM/QEMU virtualization stack"
+      ansible.builtin.import_tasks: tasks/virtualization.yml
+
+    - name: "Include | SMB share mounts"
+      ansible.builtin.import_tasks: tasks/smb.yml
+
+    - name: "Include | GNOME desktop configuration"
+      ansible.builtin.import_tasks: tasks/gnome.yml
+
+    - name: "Include | Font installation"
+      ansible.builtin.import_tasks: tasks/fonts.yml
+
+    - name: "Include | Shell configuration"
+      ansible.builtin.import_tasks: tasks/shell.yml
+
+    - name: "Include | Git global configuration"
+      ansible.builtin.import_tasks: tasks/git-config.yml
+
+    - name: "Include | Post-install cleanup"
+      ansible.builtin.import_tasks: tasks/cleanup.yml
+
+  post_tasks:
+    - name: "Done | Summary"
+      ansible.builtin.debug:
+        msg: |
+          ════════════════════════════════════════════════════════════════
+          ✅  Fedora setup complete!
+
+          Requires logout / reboot to take effect:
+            • Docker group membership   →  newgrp docker  (or log out)
+            • libvirt/kvm group         →  log out and back in
+            • Default shell change      →  log out and back in
+            • GNOME extensions          →  log out and back in
+            • SMB _netdev mounts        →  reboot to verify automount
+
+          Run modes:  (-K = --ask-become-pass,  -J = --ask-vault-pass)
+            Full run (everything):
+              ansible-playbook fedora-do.yml -K -J
+            Specific tasks only:
+              ansible-playbook fedora-do.yml -K --tags "tools,media"
+            Full run, skip something:
+              ansible-playbook fedora-do.yml -K --skip-tags gaming
+
+          Available tags:
+            always | all-apps | desktop | tools | graphics | media |
+            development | productivity | communication | gaming |
+            docker | virt | smb | gnome |
+            firmware | fonts | shell | git-config
+          ════════════════════════════════════════════════════════════════
+      tags: always

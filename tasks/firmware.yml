@@ -1,0 +1,21 @@
+---
+# =============================================================================
+# tasks/firmware.yml — Firmware Updates
+# =============================================================================
+# Refreshes the fwupd metadata cache and applies any available firmware
+# updates. rc=2 from fwupdmgr means "no updates available" — not an error.
+# =============================================================================
+
+- name: "Firmware | Refresh firmware metadata"
+  become: true
+  ansible.builtin.command: fwupdmgr refresh --force
+  changed_when: false
+  tags: firmware
+
+- name: "Firmware | Apply available firmware updates"
+  become: true
+  ansible.builtin.command: fwupdmgr update --assume-yes --no-reboot-check
+  register: fwupd_result
+  changed_when: "'Successfully installed' in fwupd_result.stdout"
+  failed_when: fwupd_result.rc not in [0, 2]
+  tags: firmware

@@ -1,0 +1,126 @@
+---
+# =============================================================================
+# tasks/flatpaks.yml — Flatpak Setup & Application Installation
+# =============================================================================
+# Ensures flatpak is installed, adds Flathub as a system-wide remote,
+# then installs Flatpak apps per category from vars/packages.yml (app_catalog).
+#
+# Flathub setup is tagged 'always'.
+# App categories are tagged individually, matching the rpm package tags.
+# =============================================================================
+
+# ── Flathub setup (always) ────────────────────────────────────────────────────
+- name: "Flatpak | Ensure flatpak is installed"
+  become: true
+  ansible.builtin.dnf:
+    name: flatpak
+    state: present
+  tags: always
+
+- name: "Flatpak | Add Flathub as system-wide remote"
+  become: true
+  community.general.flatpak_remote:
+    name: flathub
+    state: present
+    flatpakrepo_url: "https://dl.flathub.org/repo/flathub.flatpakrepo"
+    method: system
+  tags: always
+
+# ── Desktop ───────────────────────────────────────────────────────────────────
+- name: "Flatpak [desktop] | Install desktop Flatpak apps"
+  community.general.flatpak:
+    name: "{{ app_catalog.desktop.flatpak }}"
+    state: present
+    method: system
+    remote: flathub
+  when: app_catalog.desktop.flatpak | default([], true) | length > 0
+  tags: desktop
+
+# ── Tools ─────────────────────────────────────────────────────────────────────
+- name: "Flatpak [tools] | Install tools Flatpak apps"
+  community.general.flatpak:
+    name: "{{ app_catalog.tools.flatpak }}"
+    state: present
+    method: system
+    remote: flathub
+  when: app_catalog.tools.flatpak | default([], true) | length > 0
+  tags: tools
+
+# ── Graphics ──────────────────────────────────────────────────────────────────
+- name: "Flatpak [graphics] | Install graphics Flatpak apps"
+  community.general.flatpak:
+    name: "{{ app_catalog.graphics.flatpak }}"
+    state: present
+    method: system
+    remote: flathub
+  when: app_catalog.graphics.flatpak | default([], true) | length > 0
+  tags: graphics
+
+# ── Media ─────────────────────────────────────────────────────────────────────
+- name: "Flatpak [media] | Install media Flatpak apps"
+  community.general.flatpak:
+    name: "{{ app_catalog.media.flatpak }}"
+    state: present
+    method: system
+    remote: flathub
+  when: app_catalog.media.flatpak | default([], true) | length > 0
+  tags: media
+
+# ── Development ───────────────────────────────────────────────────────────────
+- name: "Flatpak [development] | Install development Flatpak apps"
+  community.general.flatpak:
+    name: "{{ app_catalog.development.flatpak }}"
+    state: present
+    method: system
+    remote: flathub
+  when: app_catalog.development.flatpak | default([], true) | length > 0
+  tags: development
+
+# ── Productivity ──────────────────────────────────────────────────────────────
+- name: "Flatpak [productivity] | Install productivity Flatpak apps"
+  community.general.flatpak:
+    name: "{{ app_catalog.productivity.flatpak }}"
+    state: present
+    method: system
+    remote: flathub
+  when: app_catalog.productivity.flatpak | default([], true) | length > 0
+  tags: productivity
+
+# ── Communication ─────────────────────────────────────────────────────────────
+- name: "Flatpak [communication] | Install communication Flatpak apps"
+  community.general.flatpak:
+    name: "{{ app_catalog.communication.flatpak }}"
+    state: present
+    method: system
+    remote: flathub
+  when: app_catalog.communication.flatpak | default([], true) | length > 0
+  tags: communication
+
+# ── Gaming ────────────────────────────────────────────────────────────────────
+- name: "Flatpak [gaming] | Install gaming Flatpak apps"
+  community.general.flatpak:
+    name: "{{ app_catalog.gaming.flatpak }}"
+    state: present
+    method: system
+    remote: flathub
+  when: app_catalog.gaming.flatpak | default([], true) | length > 0
+  tags: gaming
+
+# ── All apps (loop over every non-base category) ──────────────────────────────
+- name: "Flatpak [all-apps] | Install all category Flatpak apps"
+  community.general.flatpak:
+    name: "{{ app_catalog[item].flatpak }}"
+    state: present
+    method: system
+    remote: flathub
+  loop:
+    - desktop
+    - tools
+    - graphics
+    - media
+    - development
+    - productivity
+    - communication
+    - gaming
+  when: app_catalog[item].flatpak | default([], true) | length > 0
+  tags: all-apps

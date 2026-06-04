@@ -1,0 +1,114 @@
+---
+# =============================================================================
+# tasks/gnome.yml — GNOME Desktop Configuration
+# =============================================================================
+# All settings are driven by vars/gnome.yml.
+# Requires: community.general collection (for dconf module).
+# =============================================================================
+
+# ── Dark theme RPM ────────────────────────────────────────────────────────────
+- name: "GNOME | Install adw-gtk3 dark theme"
+  become: true
+  ansible.builtin.dnf:
+    name: adw-gtk3-theme
+    state: present
+  tags: gnome
+
+# ── Dash-to-Dock extension ────────────────────────────────────────────────────
+- name: "GNOME | Install Dash-to-Dock GNOME shell extension"
+  become: true
+  ansible.builtin.dnf:
+    name: gnome-shell-extension-dash-to-dock
+    state: present
+  tags: gnome
+
+# ── Extension Manager Flatpak ─────────────────────────────────────────────────
+- name: "GNOME | Install Extension Manager Flatpak"
+  community.general.flatpak:
+    name: com.mattjakeman.ExtensionManager
+    state: present
+    method: system
+    remote: flathub
+  tags: gnome
+
+# ── Apply dconf settings ──────────────────────────────────────────────────────
+- name: "GNOME | Apply interface settings"
+  community.general.dconf:
+    key: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  loop: "{{ gnome_interface_settings }}"
+  tags: gnome
+
+- name: "GNOME | Apply window manager settings"
+  community.general.dconf:
+    key: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  loop: "{{ gnome_wm_settings }}"
+  tags: gnome
+
+- name: "GNOME | Apply privacy settings"
+  community.general.dconf:
+    key: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  loop: "{{ gnome_privacy_settings }}"
+  tags: gnome
+
+- name: "GNOME | Apply power settings"
+  community.general.dconf:
+    key: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  loop: "{{ gnome_power_settings }}"
+  tags: gnome
+
+- name: "GNOME | Apply Night Light settings"
+  community.general.dconf:
+    key: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  loop: "{{ gnome_night_light_settings }}"
+  tags: gnome
+
+- name: "GNOME | Apply Nautilus file manager settings"
+  community.general.dconf:
+    key: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  loop: "{{ gnome_nautilus_settings }}"
+  tags: gnome
+
+# ── Enable extensions ─────────────────────────────────────────────────────────
+# Read the current list first so we only ADD our extensions rather than
+# replacing whatever the user has installed via Extension Manager.
+- name: "GNOME | Read currently enabled extensions"
+  ansible.builtin.command:
+    cmd: dconf read /org/gnome/shell/enabled-extensions
+  register: gnome_current_extensions_raw
+  changed_when: false
+  tags: gnome
+
+- name: "GNOME | Enable listed shell extensions (additive)"
+  community.general.dconf:
+    key: "/org/gnome/shell/enabled-extensions"
+    value: >-
+      {{
+        (
+          (gnome_current_extensions_raw.stdout | default('[]')
+            | regex_replace("'", '"') | from_json)
+          + gnome_enabled_extensions
+        ) | unique | to_json | regex_replace('"', "'")
+      }}
+    state: present
+  tags: gnome
+
+# ── Dash-to-Dock configuration ────────────────────────────────────────────────
+- name: "GNOME | Configure Dash-to-Dock settings"
+  community.general.dconf:
+    key: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  loop: "{{ gnome_dash_to_dock_settings }}"
+  tags: gnome

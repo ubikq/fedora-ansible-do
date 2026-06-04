@@ -1,0 +1,71 @@
+---
+# =============================================================================
+# tasks/smb.yml — SMB / CIFS Share Mounting
+# =============================================================================
+# Share definitions come from vars/smb.yml.
+# Credentials (username/password) come from vars/secrets.yml (Ansible Vault).
+#
+# Expected vault structure:
+#   smb_credentials:
+#     <cred_key>:
+#       username: "user"
+#       password: "pass"
+#
+# Each entry in smb_shares references a cred_key that must exist in
+# smb_credentials. The cred_file path is written to /etc/samba/ and
+# referenced in the fstab options automatically.
+# =============================================================================
+
+- name: "SMB | Ensure cifs-utils is installed"
+  become: true
+  ansible.builtin.dnf:
+    name: cifs-utils
+    state: present
+  tags: smb
+
+- name: "SMB | Ensure /etc/samba directory exists"
+  become: true
+  ansible.builtin.file:
+    path: /etc/samba
+    state: directory
+    mode: "0700"
+    owner: root
+    group: root
+  tags: smb
+
+- name: "SMB | Write credential files"
+  become: true
+  ansible.builtin.copy:
+    dest: "{{ item }}"
+    content: |
+      username={{ smb_credentials[(smb_shares | selectattr('cred_file', 'equalto', item) | list | first).cred_key].username }}
+      password={{ smb_credentials[(smb_shares | selectattr('cred_file', 'equalto', item) | list | first).cred_key].password }}
+    mode: "0600"
+    owner: root
+    group: root
+  # Deduplicate by collecting unique cred_file paths, then iterate those.
+  loop: "{{ smb_shares | map(attribute='cred_file') | unique | list }}"
+  no_log: true
+  tags: smb
+
+- name: "SMB | Create mount point directories"
+  become: true
+  ansible.builtin.file:
+    path: "{{ item.mount_point }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ smb_shares }}"
+  tags: smb
+
+- name: "SMB | Add shares to /etc/fstab and mount"
+  become: true
+  ansible.builtin.mount:
+    path: "{{ item.mount_point }}"
+    src: "{{ item.src }}"
+    fstype: cifs
+    opts: "credentials={{ item.cred_file }},{{ item.options }}"
+    state: mounted
+    dump: "0"
+    passno: "0"
+  loop: "{{ smb_shares }}"
+  tags: smb

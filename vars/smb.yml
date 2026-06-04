@@ -1,0 +1,41 @@
+---
+# =============================================================================
+# vars/smb.yml — SMB / CIFS Share Definitions
+# =============================================================================
+# Non-secret share configuration lives here.
+# Credentials (username/password) are stored in vars/secrets.yml (Vault).
+#
+# Each share must have a matching entry in vars/secrets.yml:
+#
+#   smb_credentials:
+#     nas_primary:
+#       username: actual_user
+#       password: actual_pass
+#     nas_docs:
+#       username: other_user
+#       password: other_pass
+#
+# The 'cred_key' field below references the matching key in smb_credentials.
+# =============================================================================
+
+smb_shares:
+  - name: "Media"
+    src: "//192.168.1.100/Media"
+    mount_point: "/mnt/nas/Media"
+    cred_key: nas_primary             # matches key in smb_credentials (secrets.yml)
+    cred_file: /etc/samba/.creds_nas_primary
+    options: "uid=1000,gid=1000,iocharset=utf8,vers=3.0,_netdev"
+
+  - name: "Backup"
+    src: "//192.168.1.100/Backup"
+    mount_point: "/mnt/nas/Backup"
+    cred_key: nas_primary
+    cred_file: /etc/samba/.creds_nas_primary
+    options: "uid=1000,gid=1000,iocharset=utf8,vers=3.0,_netdev"
+
+  - name: "Documents"
+    src: "//192.168.1.101/Documents"
+    mount_point: "/mnt/nas/Documents"
+    cred_key: nas_docs
+    cred_file: /etc/samba/.creds_nas_docs
+    options: "uid=1000,gid=1000,iocharset=utf8,vers=3.0,_netdev"

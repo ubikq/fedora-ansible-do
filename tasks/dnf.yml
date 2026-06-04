@@ -1,0 +1,23 @@
+---
+# =============================================================================
+# tasks/dnf.yml — DNF Configuration & System Update
+# =============================================================================
+
+- name: "DNF | Optimise /etc/dnf/dnf.conf"
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/dnf/dnf.conf
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+    insertafter: "^\\[main\\]"
+    backup: true
+  loop: "{{ dnf_conf_options | dict2items }}"
+  tags: always
+
+- name: "DNF | Full system update"
+  become: true
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_cache: true
+  tags: always

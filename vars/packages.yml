@@ -1,0 +1,136 @@
+---
+# =============================================================================
+# vars/packages.yml — Unified Application Catalog
+# =============================================================================
+# This is the ONLY file you need to edit to add/remove applications.
+#
+# Structure per category:
+#   rpm:     list of dnf package names (leave empty [] if none)
+#   flatpak: list of Flatpak app IDs   (leave empty [] if none)
+#
+# Tags map 1:1 to category keys. To install a category:
+#   ansible-playbook fedora-do.yml --ask-become-pass --tags tools
+#   ansible-playbook fedora-do.yml --ask-become-pass --tags "tools,media,graphics"
+#
+# 'base' and 'always' sections are never skipped.
+# =============================================================================
+
+app_catalog:
+
+  # ── Base utilities (always installed, not individually taggable) ────────────
+  base:
+    rpm:
+      - vim
+      - git
+      - curl
+      - wget
+      - htop
+      - unzip
+      - p7zip
+      - p7zip-plugins
+      - python3-pip
+      - bash-completion
+      - cifs-utils
+      - fuse
+      - fuse-libs
+    flatpak: []
+
+  # ── Desktop environment tools ───────────────────────────────────────────────
+  desktop:
+    rpm:
+      - gnome-tweaks
+      - gnome-extensions-app
+      - dconf-editor
+      - seahorse
+      - file-roller
+    flatpak:
+      - com.mattjakeman.ExtensionManager
+      - org.gnome.Boxes
+
+  # ── System tools & utilities ────────────────────────────────────────────────
+  tools:
+    rpm:
+      - btrfs-assistant
+      - timeshift
+      - rsync
+      - rclone
+      - neofetch
+      - tmux
+      - eza
+      - bat
+      - fzf
+      - restic
+    flatpak:
+      - com.github.tchx84.Flatseal
+      - io.missioncenter.MissionCenter
+      - it.mijorus.gearlever
+      - com.github.wwmm.easyeffects
+
+  # ── Graphics & image editing ────────────────────────────────────────────────
+  graphics:
+    rpm:
+      - gimp
+      - inkscape
+      - rawtherapee
+      - darktable
+    flatpak:
+      - org.kde.krita
+      - org.inkscape.Inkscape
+      - com.obsproject.Studio
+
+  # ── Media playback & editing ────────────────────────────────────────────────
+  media:
+    rpm:
+      - vlc
+      - mpv
+      - rhythmbox
+      - HandBrake-gui
+    flatpak:
+      - org.videolan.VLC
+      - io.github.celluloid_player.Celluloid
+      - org.gnome.Lollypop
+      - com.spotify.Client
+      - org.kde.kdenlive
+
+  # ── Development ─────────────────────────────────────────────────────────────
+  development:
+    rpm:
+#      - gcc
+#      - gcc-c++
+#      - make
+#      - cmake
+#      - nodejs
+#      - npm
+#      - golang
+#      - python3-devel
+      - code          # VS Code — requires Microsoft repo (added in repos.yml)
+    flatpak: []
+
+  # ── Productivity & office ───────────────────────────────────────────────────
+  productivity:
+    rpm: []
+    flatpak:
+      - org.libreoffice.LibreOffice
+      - md.obsidian.Obsidian
+      - com.github.flxzt.rnote
+      - org.gnome.Evolution
+
+  # ── Communication ───────────────────────────────────────────────────────────
+  communication:
+    rpm: []
+    flatpak:
+#      - org.signal.Signal
+#      - im.riot.Riot
+#      - com.discordapp.Discord
+#      - us.zoom.Zoom
+
+  # ── Gaming ──────────────────────────────────────────────────────────────────
+  gaming:
+    rpm:
+#      - steam
+#      - lutris
+#      - gamemode
+    flatpak:
+#      - com.valvesoftware.Steam
+#      - net.lutris.Lutris
+#      - org.libretro.RetroArch

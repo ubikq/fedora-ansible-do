@@ -1,0 +1,46 @@
+---
+# =============================================================================
+# tasks/git-config.yml — Git Global Configuration
+# =============================================================================
+# Applies sensible Git globals for the current user.
+# git_user_name and git_user_email are read from vars/git.yml — fill those in
+# before running. The credential helper integrates with GNOME Keyring so
+# HTTPS passwords are stored securely and never re-prompted.
+# =============================================================================
+
+- name: "Git | Set user name"
+  community.general.git_config:
+    name: user.name
+    value: "{{ git_user_name }}"
+    scope: global
+  when: git_user_name is defined and git_user_name | length > 0
+  tags: git-config
+
+- name: "Git | Set user email"
+  community.general.git_config:
+    name: user.email
+    value: "{{ git_user_email }}"
+    scope: global
+  when: git_user_email is defined and git_user_email | length > 0
+  tags: git-config
+
+- name: "Git | Set default branch name"
+  community.general.git_config:
+    name: init.defaultBranch
+    value: main
+    scope: global
+  tags: git-config
+
+- name: "Git | Disable rebase on pull"
+  community.general.git_config:
+    name: pull.rebase
+    value: "false"
+    scope: global
+  tags: git-config
+
+- name: "Git | Set GNOME Keyring credential helper"
+  community.general.git_config:
+    name: credential.helper
+    value: /usr/libexec/git-core/git-credential-libsecret
+    scope: global
+  tags: git-config

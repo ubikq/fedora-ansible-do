@@ -1,0 +1,109 @@
+---
+# =============================================================================
+# tasks/packages.yml — RPM Package Installation
+# =============================================================================
+# Reads rpm lists from vars/packages.yml (app_catalog).
+# Each block is tagged with its category name so categories can be selected
+# individually at run time with --tags.
+#
+# The base category is tagged 'always' and is never skipped.
+# =============================================================================
+
+# ── Base (always) ─────────────────────────────────────────────────────────────
+- name: "Packages [base] | Install base RPM packages"
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ app_catalog.base.rpm }}"
+    state: present
+  when: app_catalog.base.rpm | default([], true) | length > 0
+  tags: always
+
+# ── Desktop ───────────────────────────────────────────────────────────────────
+- name: "Packages [desktop] | Install desktop RPM packages"
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ app_catalog.desktop.rpm }}"
+    state: present
+  when: app_catalog.desktop.rpm | default([], true) | length > 0
+  tags: desktop
+
+# ── Tools ─────────────────────────────────────────────────────────────────────
+- name: "Packages [tools] | Install tools RPM packages"
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ app_catalog.tools.rpm }}"
+    state: present
+  when: app_catalog.tools.rpm | default([], true) | length > 0
+  tags: tools
+
+# ── Graphics ──────────────────────────────────────────────────────────────────
+- name: "Packages [graphics] | Install graphics RPM packages"
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ app_catalog.graphics.rpm }}"
+    state: present
+  when: app_catalog.graphics.rpm | default([], true) | length > 0
+  tags: graphics
+
+# ── Media ─────────────────────────────────────────────────────────────────────
+- name: "Packages [media] | Install media RPM packages"
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ app_catalog.media.rpm }}"
+    state: present
+  when: app_catalog.media.rpm | default([], true) | length > 0
+  tags: media
+
+# ── Development ───────────────────────────────────────────────────────────────
+- name: "Packages [development] | Install development RPM packages"
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ app_catalog.development.rpm }}"
+    state: present
+  when: app_catalog.development.rpm | default([], true) | length > 0
+  tags: development
+
+# ── Productivity ──────────────────────────────────────────────────────────────
+- name: "Packages [productivity] | Install productivity RPM packages"
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ app_catalog.productivity.rpm }}"
+    state: present
+  when: app_catalog.productivity.rpm | default([], true) | length > 0
+  tags: productivity
+
+# ── Communication ─────────────────────────────────────────────────────────────
+- name: "Packages [communication] | Install communication RPM packages"
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ app_catalog.communication.rpm }}"
+    state: present
+  when: app_catalog.communication.rpm | default([], true) | length > 0
+  tags: communication
+
+# ── Gaming ────────────────────────────────────────────────────────────────────
+- name: "Packages [gaming] | Install gaming RPM packages"
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ app_catalog.gaming.rpm }}"
+    state: present
+  when: app_catalog.gaming.rpm | default([], true) | length > 0
+  tags: gaming
+
+# ── All apps (loop over every non-base category) ──────────────────────────────
+- name: "Packages [all-apps] | Install all category RPM packages"
+  become: true
+  ansible.builtin.dnf:
+    name: "{{ app_catalog[item].rpm }}"
+    state: present
+  loop:
+    - desktop
+    - tools
+    - graphics
+    - media
+    - development
+    - productivity
+    - communication
+    - gaming
+  when: app_catalog[item].rpm | default([], true) | length > 0
+  tags: all-apps

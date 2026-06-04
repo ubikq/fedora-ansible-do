@@ -1,0 +1,26 @@
+---
+# =============================================================================
+# tasks/cleanup.yml — Post-install Tidy-up
+# =============================================================================
+
+- name: "Cleanup | Remove orphaned packages (autoremove)"
+  become: true
+  ansible.builtin.dnf:
+    autoremove: true
+  tags: always
+
+- name: "Cleanup | Clear DNF package cache"
+  become: true
+  ansible.builtin.command:
+    cmd: dnf clean packages
+  register: dnf_clean_result
+  changed_when: "'0 files removed' not in dnf_clean_result.stdout"
+  tags: always
+
+- name: "Cleanup | Update Flatpak apps"
+  become: true
+  ansible.builtin.command:
+    cmd: flatpak update --noninteractive --system
+  register: flatpak_update_result
+  changed_when: "'app/' in flatpak_update_result.stdout or 'runtime/' in flatpak_update_result.stdout"
+  tags: always

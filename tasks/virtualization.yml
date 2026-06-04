@@ -1,0 +1,39 @@
+---
+# =============================================================================
+# tasks/virtualization.yml — KVM / QEMU / libvirt Stack
+# =============================================================================
+# Installs the full @virtualization DNF group (qemu-kvm, libvirt, virt-manager,
+# virt-viewer, etc.), enables the libvirtd service, and adds the current user
+# to the libvirt and kvm groups (requires logout to take effect).
+# =============================================================================
+
+- name: "Virt | Install virtualization group"
+  become: true
+  ansible.builtin.dnf:
+    name: "@virtualization"
+    state: present
+  tags: virt
+
+- name: "Virt | Enable and start libvirtd"
+  become: true
+  ansible.builtin.systemd:
+    name: libvirtd
+    enabled: true
+    state: started
+  tags: virt
+
+- name: "Virt | Add user to libvirt group"
+  become: true
+  ansible.builtin.user:
+    name: "{{ ansible_user_id }}"
+    groups: libvirt
+    append: true
+  tags: virt
+
+- name: "Virt | Add user to kvm group"
+  become: true
+  ansible.builtin.user:
+    name: "{{ ansible_user_id }}"
+    groups: kvm
+    append: true
+  tags: virt

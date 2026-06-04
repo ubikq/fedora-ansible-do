@@ -1,0 +1,75 @@
+---
+# =============================================================================
+# vars/gnome.yml — GNOME Desktop Configuration
+# =============================================================================
+# All dconf key/value pairs for GNOME customisation.
+# Values must be in GVariant format (the same format dconf uses):
+#   strings  → 'single-quoted'  wrapped in "double-quoted" YAML → "'value'"
+#   booleans → true / false      (no quotes)
+#   integers → plain number      (no quotes)
+# =============================================================================
+
+# ── Appearance ─────────────────────────────────────────────────────────────────
+gnome_interface_settings:
+  - { key: "/org/gnome/desktop/interface/color-scheme",       value: "'prefer-dark'" }
+  - { key: "/org/gnome/desktop/interface/gtk-theme",          value: "'adw-gtk3-dark'" }
+  - { key: "/org/gnome/desktop/interface/icon-theme",         value: "'Adwaita'" }
+  - { key: "/org/gnome/desktop/interface/clock-show-weekday", value: "true" }
+  - { key: "/org/gnome/desktop/interface/clock-show-seconds", value: "false" }
+  - { key: "/org/gnome/desktop/interface/show-battery-percentage", value: "true" }
+  - { key: "/org/gnome/desktop/interface/font-antialiasing",  value: "'rgba'" }
+  - { key: "/org/gnome/desktop/interface/enable-animations",  value: "true" }
+
+# ── Window Manager ──────────────────────────────────────────────────────────────
+gnome_wm_settings:
+  - { key: "/org/gnome/desktop/wm/preferences/button-layout",  value: "'appmenu:minimize,maximize,close'" }
+  - { key: "/org/gnome/desktop/wm/preferences/num-workspaces", value: "4" }
+  - { key: "/org/gnome/mutter/dynamic-workspaces",             value: "false" }
+  - { key: "/org/gnome/desktop/wm/preferences/focus-mode",     value: "'click'" }
+
+# ── Privacy ────────────────────────────────────────────────────────────────────
+gnome_privacy_settings:
+  - { key: "/org/gnome/desktop/privacy/remember-recent-files", value: "true" }
+  - { key: "/org/gnome/desktop/privacy/recent-files-max-age",  value: "30" }
+  - { key: "/org/gnome/system/location/enabled",               value: "false" }
+
+# ── Power Management ────────────────────────────────────────────────────────────
+gnome_power_settings:
+  - { key: "/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type",       value: "'nothing'" }
+  - { key: "/org/gnome/settings-daemon/plugins/power/sleep-inactive-battery-timeout", value: "1800" }
+
+# ── Night Light ────────────────────────────────────────────────────────────────
+gnome_night_light_settings:
+  - { key: "/org/gnome/settings-daemon/plugins/color/night-light-enabled",     value: "true" }
+  - { key: "/org/gnome/settings-daemon/plugins/color/night-light-temperature", value: "4000" }
+
+# ── Nautilus File Manager ───────────────────────────────────────────────────────
+gnome_nautilus_settings:
+  - { key: "/org/gnome/nautilus/preferences/show-hidden-files",      value: "true" }
+  - { key: "/org/gnome/nautilus/preferences/default-folder-viewer",  value: "'icon-view'" }
+  - { key: "/org/gnome/nautilus/preferences/sort-directories-first", value: "true" }
+
+# ── Dash-to-Dock Extension ──────────────────────────────────────────────────────
+# The extension UUID must match what the gnome-shell-extension package installs.
+gnome_dash_to_dock_uuid: "dash-to-dock@micxgx.gmail.com"
+
+gnome_dash_to_dock_settings:
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/dock-position",    value: "'BOTTOM'" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/extend-height",    value: "false" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/dock-fixed",       value: "true" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/autohide",         value: "false" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/show-apps-at-top", value: "true" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/show-trash",       value: "true" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/show-mounts",      value: "false" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/dash-max-icon-size", value: "40" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/click-action",     value: "'minimize'" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/transparency-mode", value: "'FIXED'" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/background-opacity", value: "0.8" }
+
+# ── Additional extensions to enable (list of UUIDs) ────────────────────────────
+# Add extension UUIDs here — they must already be installed on the system.
+gnome_enabled_extensions:
+  - "dash-to-dock@micxgx.gmail.com"
+  # - "appindicatorsupport@rgcjonas.gmail.com"
+  # - "blur-my-shell@aunetx"
+  # - "user-theme@gnome-shell-extensions.gcampax.github.com"
