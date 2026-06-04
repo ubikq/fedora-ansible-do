@@ -20,6 +20,10 @@ This Ansible playbook automates the post-install configuration of Fedora Worksta
 
 - **Niri Compositor & DankMaterialShell** (opt-in, `--tags niri`): Installs the niri scrolling tiling Wayland compositor alongside the DankMaterialShell desktop shell. A default `config.kdl` is deployed on first run as a ready-to-use starting point for customization. Once personalized, the configuration can be backed up and restored across fresh installations using the playbook's built-in backup system.
 
+### Feature Roadmap
+
+- Add Winboat installation and configuration
+
 ---
 
 ## ⚠️ Disclaimer
