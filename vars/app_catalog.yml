@@ -69,7 +69,6 @@ app_catalog:
       - tldr # Community driven alternative to man pages with short, practical, and ready-to-use command examples
       - restic # Command-line backup program - fast, efficient, secure, and verifiably accurate with deduplication capabilities
       - syncthing # Continuous file synchronization program between workstation and my nas.
-      
     flatpak:
       - io.github.kolunmi.Bazaar # Flatpak app store and manager
       - io.github.flattool.Warehouse # Manage flatpaks including version control

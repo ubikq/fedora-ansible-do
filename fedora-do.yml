@@ -25,7 +25,8 @@
 #   always | all-apps | desktop | tools | graphics | media | development |
 #   productivity | communication | gaming | docker | virt | smb | gnome |
 #   firmware | fonts | shell | git-config |
-#   backup | restore | flatpak-backup | flatpak-restore | rpm-backup | rpm-restore
+#   backup | restore | flatpak-backup | flatpak-restore | rpm-backup | rpm-restore |
+#   niri  (never runs by default — opt-in: --tags niri)
 # =============================================================================
 
 - name: Fedora Workstation Setup
@@ -65,6 +66,11 @@
     - name: "Pre | Load RPM config backup registry"
       ansible.builtin.include_vars:
         file: vars/rpm_configs.yml
+      tags: always
+
+    - name: "Pre | Load niri / DankMaterialShell configuration"
+      ansible.builtin.include_vars:
+        file: vars/niri.yml
       tags: always
 
     - name: "Pre | Load Git configuration (if present)"
@@ -141,6 +147,9 @@
 
     - name: "Include | GNOME desktop configuration"
       ansible.builtin.import_tasks: tasks/gnome.yml
+
+    - name: "Include | Niri compositor and DankMaterialShell"
+      ansible.builtin.import_tasks: tasks/niri.yml
 
     - name: "Include | Font installation"
       ansible.builtin.import_tasks: tasks/fonts.yml

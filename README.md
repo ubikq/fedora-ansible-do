@@ -4,7 +4,7 @@
 
 This Ansible playbook automates the post-install configuration of Fedora Workstation, systematically transforming a stock setup into a fully provisioned environment. To keep the project clean and maintainable, all application lists are centralized in a single file (`vars/app_catalog.yml`), while the logic is organized into dedicated task and variable files. 
 
-### Key Capabilities
+### Features
 
 - **System Maintenance & Upgrades**: Automates the standard system update cycle (`dnf upgrade`), manages official Fedora repositories, and handles package cleanup tasks.
     
@@ -18,11 +18,7 @@ This Ansible playbook automates the post-install configuration of Fedora Worksta
 
 - **Configuration Backup & Restore**: Backs up and restores application configuration to and from a network share, covering both Flatpak and RPM-installed applications. Maintains dated archives, a rolling latest snapshot, and optional monthly snapshots with configurable retention. See the [Backup & Restore](#backup--restore) section for details.
 
-### Planned Roadmap
-
-The following changes are envisioned:
-
-- Incorporate the fantastic _niri_ scrolling tiling compositor with the _DankMaterialShell_ desktop shell
+- **Niri Compositor & DankMaterialShell** (opt-in, `--tags niri`): Installs the niri scrolling tiling Wayland compositor alongside the DankMaterialShell desktop shell. A default `config.kdl` is deployed on first run as a ready-to-use starting point for customization. Once personalized, the configuration can be backed up and restored across fresh installations using the playbook's built-in backup system.
 
 ---
 

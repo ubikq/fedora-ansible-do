@@ -1,0 +1,93 @@
+---
+# =============================================================================
+# tasks/niri.yml — Niri Compositor + DankMaterialShell
+# =============================================================================
+# Opt-in only — none of these tasks run unless --tags niri is specified.
+# Usage:  ansible-playbook fedora-do.yml -K --tags niri
+# =============================================================================
+
+# ── RPM packages ──────────────────────────────────────────────────────────────
+- name: "Niri | Install compositor and Wayland support packages"
+  tags: [never, niri]
+  block:
+    - name: "Niri | Install niri and xwayland-satellite"
+      become: true
+      ansible.builtin.dnf:
+        name:
+          - niri
+          - xwayland-satellite
+        state: present
+      register: _niri_pkg_result
+
+    - name: "Niri | Track installed packages"
+      ansible.builtin.set_fact:
+        _changed_rpms: >-
+          {{
+            _changed_rpms + (
+              ['niri', 'xwayland-satellite']
+              if _niri_pkg_result.changed else []
+            )
+          }}
+  rescue:
+    - name: "Niri | Record package install failure"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{
+            (_run_errors | default([])) +
+            ['Niri: package install failed (niri / xwayland-satellite)']
+          }}
+
+# ── DankMaterialShell ─────────────────────────────────────────────────────────
+- name: "Niri | Install DankMaterialShell"
+  tags: [never, niri]
+  block:
+    - name: "Niri | Enable DMS COPR repository"
+      become: true
+      ansible.builtin.get_url:
+        url: "https://copr.fedorainfracloud.org/coprs/avengemedia/dms/repo/fedora-{{ ansible_facts.distribution_major_version }}/avengemedia-dms-fedora-{{ ansible_facts.distribution_major_version }}.repo"
+        dest: /etc/yum.repos.d/avengemedia-dms.repo
+        mode: '0644'
+
+    - name: "Niri | Install DankMaterialShell from COPR"
+      become: true
+      ansible.builtin.dnf:
+        name: dms
+        state: present
+      register: _dms_pkg_result
+
+    - name: "Niri | Track DMS installation"
+      ansible.builtin.set_fact:
+        _changed_rpms: "{{ _changed_rpms + (['dms'] if _dms_pkg_result.changed else []) }}"
+  rescue:
+    - name: "Niri | Record DMS install failure"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{
+            (_run_errors | default([])) +
+            ['Niri: DankMaterialShell install failed — enable COPR avengemedia/dms and install dms manually']
+          }}
+
+# ── niri configuration ────────────────────────────────────────────────────────
+- name: "Niri | Deploy config.kdl"
+  tags: [never, niri]
+  block:
+    - name: "Niri | Ensure niri config directory exists"
+      ansible.builtin.file:
+        path: "{{ ansible_facts.user_dir }}/.config/niri"
+        state: directory
+        mode: '0755'
+
+    - name: "Niri | Deploy config.kdl from template (first run only)"
+      ansible.builtin.template:
+        src: niri-config.kdl.j2
+        dest: "{{ ansible_facts.user_dir }}/.config/niri/config.kdl"
+        mode: '0644'
+        force: false
+  rescue:
+    - name: "Niri | Record config deploy failure"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{
+            (_run_errors | default([])) +
+            ['Niri: config.kdl deployment failed — check templates/niri-config.kdl.j2']
+          }}
