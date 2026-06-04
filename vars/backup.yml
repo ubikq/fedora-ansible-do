@@ -1,0 +1,36 @@
+---
+# =============================================================================
+# vars/backup.yml — Backup & Restore Configuration
+# =============================================================================
+# Controls where backups are stored and how retention is managed.
+# Retention settings are shared between Flatpak and RPM backups.
+# No secrets here — all values are plain paths and numbers.
+# =============================================================================
+
+# ── Flatpak backup paths ──────────────────────────────────────────────────────
+# Destination directory on the backup share (created if absent).
+flatpak_backup_base_dir: "{{ ansible_facts.user_dir }}/Mounts/backups/config-backups/flatpak"
+
+# Local staging area used during backup and restore.
+# Defaults to ~/.cache to stay on-disk. Avoid /tmp — on most Fedora systems
+# it is a tmpfs (RAM-backed) and large archives can exhaust available memory.
+flatpak_backup_tmp_dir: "{{ ansible_facts.user_dir }}/.cache/flatpak_backup_staging"
+
+# ── RPM backup paths ──────────────────────────────────────────────────────────
+rpm_backup_base_dir: "{{ ansible_facts.user_dir }}/Mounts/backups/config-backups/rpm"
+rpm_backup_tmp_dir: "{{ ansible_facts.user_dir }}/.cache/rpm_backup_staging"
+
+# ── Shared retention settings (apply to both Flatpak and RPM) ─────────────────
+
+# Maximum number of dated (daily) backup archives to keep.
+backup_max_archives: 5
+
+# Minimum number of dated archives to retain regardless of age.
+backup_min_archives: 2
+
+# Delete dated archives older than this many days (backup_min_archives always kept).
+backup_max_age_days: 30
+
+# Each backup run writes/overwrites a monthly snapshot (e.g. backup_monthly_2026-06.tar.gz).
+# Controls how many monthly snapshots to keep. Set to 0 to disable monthly retention.
+backup_monthly_months: 6

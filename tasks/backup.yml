@@ -1,0 +1,841 @@
+---
+# =============================================================================
+# tasks/backup.yml — Configuration Backup & Restore
+# =============================================================================
+# Backs up and restores Flatpak and RPM application configuration.
+# Paths and retention are configured in vars/backup.yml.
+# RPM config entries are declared in vars/rpm_configs.yml.
+#
+# Prerequisites: rsync must be installed (included in the 'tools' tag).
+#
+# TAGS (all tagged 'never' — only run when explicitly requested):
+#   backup          →  run both Flatpak and RPM backup
+#   restore         →  run both Flatpak and RPM restore
+#   flatpak-backup  →  Flatpak config backup only
+#   flatpak-restore →  Flatpak config restore only
+#   rpm-backup      →  RPM config backup only
+#   rpm-restore     →  RPM config restore only
+# =============================================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SHARED HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Inline macro: resolve the SMB mount point that contains a given base_dir.
+# Used by both Flatpak and RPM pre-checks.
+# Call with: _mnt_base_dir set to the relevant base dir before the task.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FLATPAK BACKUP
+# ─────────────────────────────────────────────────────────────────────────────
+
+- name: "Flatpak Backup | Check SMB credentials are available"
+  ansible.builtin.set_fact:
+    _backup_creds_ok: "{{ smb_credentials is defined }}"
+  tags: [never, backup, flatpak-backup]
+
+- name: "Flatpak Backup | Record skipped backup — no SMB credentials"
+  ansible.builtin.set_fact:
+    _run_errors: >-
+      {{ _run_errors + ['Flatpak backup skipped — SMB credentials not available.'
+         + ' Create vars/secrets.yml from vars/secrets.yml.template first'] }}
+  when: not _backup_creds_ok
+  tags: [never, backup, flatpak-backup]
+
+- name: "Flatpak Backup | Resolve SMB mount point"
+  ansible.builtin.set_fact:
+    _backup_check_path: >-
+      {{ smb_shares | default([])
+         | map(attribute='mount_point')
+         | map('replace', '~', ansible_facts.user_dir)
+         | select('in', flatpak_backup_base_dir)
+         | sort(reverse=true)
+         | list
+         | first
+         | default(flatpak_backup_base_dir | dirname) }}
+  when: _backup_creds_ok
+  tags: [never, backup, flatpak-backup]
+
+- name: "Flatpak Backup | Stat mount point"
+  ansible.builtin.stat:
+    path: "{{ _backup_check_path }}"
+  register: _backup_share_stat
+  when: _backup_creds_ok
+  tags: [never, backup, flatpak-backup]
+
+- name: "Flatpak Backup | Stat home directory"
+  ansible.builtin.stat:
+    path: "{{ ansible_facts.user_dir }}"
+  register: _backup_home_stat
+  when: _backup_creds_ok
+  tags: [never, backup, flatpak-backup]
+
+- name: "Flatpak Backup | Check share is mounted"
+  ansible.builtin.set_fact:
+    _backup_mount_ok: >-
+      {{ _backup_share_stat.stat.exists | default(false)
+         and _backup_share_stat.stat.dev != _backup_home_stat.stat.dev }}
+  when: _backup_creds_ok
+  tags: [never, backup, flatpak-backup]
+
+- name: "Flatpak Backup | Record skipped backup — share not mounted"
+  ansible.builtin.set_fact:
+    _run_errors: >-
+      {{ _run_errors + ['Flatpak backup skipped — backup share not mounted at '
+         + flatpak_backup_base_dir + '. Check NAS connectivity and SMB credentials'] }}
+  when: _backup_creds_ok and not (_backup_mount_ok | default(false))
+  tags: [never, backup, flatpak-backup]
+
+- name: "Flatpak Backup | Run"
+  tags: [never, backup, flatpak-backup]
+  when: (_backup_creds_ok | default(false)) and (_backup_mount_ok | default(false))
+  block:
+    - name: "Flatpak Backup | Set run variables"
+      ansible.builtin.set_fact:
+        _fb_flatpaks: >-
+          {{ app_catalog.values()
+             | map(attribute='flatpak')
+             | select
+             | flatten
+             | list }}
+        _fb_base_dir: "{{ flatpak_backup_base_dir }}"
+        _fb_tmp_dir: "{{ flatpak_backup_tmp_dir }}"
+        _fb_date: "{{ ansible_facts.date_time.date }}"
+        _bk_max: "{{ backup_max_archives | int }}"
+        _bk_min: "{{ backup_min_archives | int }}"
+        _bk_monthly: "{{ backup_monthly_months | int }}"
+        _bk_age_secs: "{{ backup_max_age_days | int * 86400 }}"
+
+    - name: "Flatpak Backup | Prepare staging directory"
+      ansible.builtin.file:
+        path: "{{ _fb_tmp_dir }}/app"
+        state: "{{ item }}"
+        mode: '0700'
+      loop: [absent, directory]
+
+    - name: "Flatpak Backup | Ensure destination directory exists"
+      ansible.builtin.file:
+        path: "{{ _fb_base_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: "Flatpak Backup | Find apps with config directories"
+      ansible.builtin.find:
+        paths: "{{ ansible_facts.user_dir }}/.var/app"
+        file_type: directory
+        recurse: false
+      register: _fb_existing_dirs
+      failed_when: false
+
+    - name: "Flatpak Backup | Filter to apps with existing configs"
+      ansible.builtin.set_fact:
+        _fb_apps_with_config: >-
+          {{ _fb_flatpaks
+             | select('in', _fb_existing_dirs.files | default([])
+                            | map(attribute='path')
+                            | map('basename')
+                            | list)
+             | list }}
+
+    - name: "Flatpak Backup | Sync configs to staging"
+      ansible.posix.synchronize:
+        src: "{{ ansible_facts.user_dir }}/.var/app/{{ item }}/"
+        dest: "{{ _fb_tmp_dir }}/app/{{ item }}/"
+        recursive: true
+        delete: true
+      loop: "{{ _fb_apps_with_config }}"
+      loop_control:
+        label: "{{ item }}"
+      register: _fb_sync_results
+      failed_when: false
+
+    - name: "Flatpak Backup | Track sync failures"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{ _run_errors
+             + (['Flatpak backup: sync failed for ' + item.item]
+                if (item.rc | default(0)) != 0 else []) }}
+      loop: "{{ _fb_sync_results.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: _fb_apps_with_config | length > 0
+
+    - name: "Flatpak Backup | Compress to dated archive"
+      community.general.archive:
+        path: "{{ _fb_tmp_dir }}/app"
+        dest: "{{ _fb_tmp_dir }}/flatpak_backup_{{ _fb_date }}.tar.gz"
+        format: gz
+        mode: '0644'
+
+    - name: "Flatpak Backup | Copy dated archive to share"
+      ansible.builtin.command:
+        cmd: >-
+          cp {{ _fb_tmp_dir }}/flatpak_backup_{{ _fb_date }}.tar.gz
+             {{ _fb_base_dir }}/flatpak_backup_{{ _fb_date }}.tar.gz
+      changed_when: true
+
+    - name: "Flatpak Backup | Update latest snapshot"
+      ansible.builtin.command:
+        cmd: >-
+          cp {{ _fb_tmp_dir }}/flatpak_backup_{{ _fb_date }}.tar.gz
+             {{ _fb_base_dir }}/flatpak_backup_latest.tar.gz
+      changed_when: true
+
+    - name: "Flatpak Backup | Update monthly snapshot"
+      ansible.builtin.command:
+        cmd: >-
+          cp {{ _fb_base_dir }}/flatpak_backup_{{ _fb_date }}.tar.gz
+             {{ _fb_base_dir }}/flatpak_backup_monthly_{{ _fb_date[:7] }}.tar.gz
+      changed_when: true
+      when: _bk_monthly | int > 0
+
+    - name: "Flatpak Backup | Clean staging directory"
+      ansible.builtin.file:
+        path: "{{ _fb_tmp_dir }}"
+        state: absent
+
+    - name: "Flatpak Backup | Find dated archives"
+      ansible.builtin.find:
+        paths: "{{ _fb_base_dir }}"
+        patterns: "flatpak_backup_[0-9]*.tar.gz"
+        file_type: file
+      register: _fb_archives
+
+    - name: "Flatpak Backup | Delete excess dated archives"
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: >-
+        {{ (_fb_archives.files
+            | sort(attribute='mtime', reverse=true))[_bk_max | default(0) | int:] }}
+      loop_control:
+        label: "{{ item.path | basename }}"
+
+    - name: "Flatpak Backup | Delete dated archives older than max age"
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: >-
+        {{ (_fb_archives.files
+            | sort(attribute='mtime', reverse=true))[_bk_min | default(0) | int:] }}
+      loop_control:
+        label: "{{ item.path | basename }}"
+      when: ((ansible_facts.date_time.epoch | int) - (item.mtime | int)) > (_bk_age_secs | int)
+
+    - name: "Flatpak Backup | Find monthly archives"
+      ansible.builtin.find:
+        paths: "{{ _fb_base_dir }}"
+        patterns: "flatpak_backup_monthly_*.tar.gz"
+        file_type: file
+      register: _fb_monthly_archives
+      when: _bk_monthly | int > 0
+
+    - name: "Flatpak Backup | Delete excess monthly archives"
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: >-
+        {{ (_fb_monthly_archives.files | default([])
+            | sort(attribute='mtime', reverse=true))[_bk_monthly | default(0) | int:] }}
+      loop_control:
+        label: "{{ item.path | basename }}"
+      when: _bk_monthly | int > 0
+
+    - name: "Flatpak Backup | Record success"
+      ansible.builtin.set_fact:
+        _backup_results: >-
+          {{ _backup_results
+             + ['Flatpak backup completed: flatpak_backup_' + _fb_date + '.tar.gz'] }}
+
+  rescue:
+    - name: "Flatpak Backup | Record failure"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{ (_run_errors | default([])) + ['Flatpak backup failed'
+             + ' — check share is accessible at ' + flatpak_backup_base_dir] }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FLATPAK RESTORE
+# ─────────────────────────────────────────────────────────────────────────────
+
+- name: "Flatpak Restore | Check SMB credentials are available"
+  ansible.builtin.set_fact:
+    _restore_creds_ok: "{{ smb_credentials is defined }}"
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Record skipped restore — no SMB credentials"
+  ansible.builtin.set_fact:
+    _run_errors: >-
+      {{ _run_errors + ['Flatpak restore skipped — SMB credentials not available.'
+         + ' Create vars/secrets.yml from vars/secrets.yml.template first'] }}
+  when: not _restore_creds_ok
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Resolve SMB mount point"
+  ansible.builtin.set_fact:
+    _restore_check_path: >-
+      {{ smb_shares | default([])
+         | map(attribute='mount_point')
+         | map('replace', '~', ansible_facts.user_dir)
+         | select('in', flatpak_backup_base_dir)
+         | sort(reverse=true)
+         | list
+         | first
+         | default(flatpak_backup_base_dir | dirname) }}
+  when: _restore_creds_ok
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Stat mount point"
+  ansible.builtin.stat:
+    path: "{{ _restore_check_path }}"
+  register: _restore_share_stat
+  when: _restore_creds_ok
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Stat home directory"
+  ansible.builtin.stat:
+    path: "{{ ansible_facts.user_dir }}"
+  register: _restore_home_stat
+  when: _restore_creds_ok
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Check share is mounted"
+  ansible.builtin.set_fact:
+    _restore_mount_ok: >-
+      {{ _restore_share_stat.stat.exists | default(false)
+         and _restore_share_stat.stat.dev != _restore_home_stat.stat.dev }}
+  when: _restore_creds_ok
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Record skipped restore — share not mounted"
+  ansible.builtin.set_fact:
+    _run_errors: >-
+      {{ _run_errors + ['Flatpak restore skipped — backup share not mounted at '
+         + flatpak_backup_base_dir + '. Check NAS connectivity and SMB credentials'] }}
+  when: _restore_creds_ok and not (_restore_mount_ok | default(false))
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Run"
+  tags: [never, restore, flatpak-restore]
+  when: (_restore_creds_ok | default(false)) and (_restore_mount_ok | default(false))
+  block:
+    - name: "Flatpak Restore | Set run variables"
+      ansible.builtin.set_fact:
+        _fr_flatpaks: >-
+          {{ app_catalog.values()
+             | map(attribute='flatpak')
+             | select
+             | flatten
+             | list }}
+        _fr_base_dir: "{{ flatpak_backup_base_dir }}"
+        _fr_tmp_dir: "{{ flatpak_backup_tmp_dir }}"
+
+    - name: "Flatpak Restore | Prepare staging directory"
+      ansible.builtin.file:
+        path: "{{ _fr_tmp_dir }}"
+        state: "{{ item }}"
+        mode: '0700'
+      loop: [absent, directory]
+
+    - name: "Flatpak Restore | Extract latest archive to staging"
+      ansible.builtin.unarchive:
+        src: "{{ _fr_base_dir }}/flatpak_backup_latest.tar.gz"
+        dest: "{{ _fr_tmp_dir }}"
+        remote_src: true
+
+    - name: "Flatpak Restore | Find apps present in archive"
+      ansible.builtin.find:
+        paths: "{{ _fr_tmp_dir }}/app"
+        file_type: directory
+        recurse: false
+      register: _fr_staged_dirs
+      failed_when: false
+
+    - name: "Flatpak Restore | Filter to apps present in archive"
+      ansible.builtin.set_fact:
+        _fr_apps_to_restore: >-
+          {{ _fr_flatpaks
+             | select('in', _fr_staged_dirs.files | default([])
+                            | map(attribute='path')
+                            | map('basename')
+                            | list)
+             | list }}
+
+    - name: "Flatpak Restore | Ensure ~/.var/app exists"
+      ansible.builtin.file:
+        path: "{{ ansible_facts.user_dir }}/.var/app"
+        state: directory
+        mode: '0700'
+
+    - name: "Flatpak Restore | Sync configs from staging to ~/.var/app"
+      ansible.posix.synchronize:
+        src: "{{ _fr_tmp_dir }}/app/{{ item }}/"
+        dest: "{{ ansible_facts.user_dir }}/.var/app/{{ item }}/"
+        recursive: true
+        delete: true
+      loop: "{{ _fr_apps_to_restore }}"
+      loop_control:
+        label: "{{ item }}"
+      register: _fr_sync_results
+      failed_when: false
+
+    - name: "Flatpak Restore | Track sync failures"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{ _run_errors
+             + (['Flatpak restore: sync failed for ' + item.item]
+                if (item.rc | default(0)) != 0 else []) }}
+      loop: "{{ _fr_sync_results.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: _fr_apps_to_restore | length > 0
+
+    - name: "Flatpak Restore | Clean staging directory"
+      ansible.builtin.file:
+        path: "{{ _fr_tmp_dir }}"
+        state: absent
+
+    - name: "Flatpak Restore | Record success"
+      ansible.builtin.set_fact:
+        _backup_results: >-
+          {{ _backup_results
+             + ['Flatpak restore completed from flatpak_backup_latest.tar.gz'] }}
+
+  rescue:
+    - name: "Flatpak Restore | Record failure"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{ (_run_errors | default([])) + ['Flatpak restore failed'
+             + ' — check flatpak_backup_latest.tar.gz exists at '
+             + flatpak_backup_base_dir] }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RPM BACKUP
+# ─────────────────────────────────────────────────────────────────────────────
+
+- name: "RPM Backup | Check SMB credentials are available"
+  ansible.builtin.set_fact:
+    _backup_creds_ok: "{{ smb_credentials is defined }}"
+  tags: [never, backup, rpm-backup]
+
+- name: "RPM Backup | Record skipped backup — no SMB credentials"
+  ansible.builtin.set_fact:
+    _run_errors: >-
+      {{ _run_errors + ['RPM backup skipped — SMB credentials not available.'
+         + ' Create vars/secrets.yml from vars/secrets.yml.template first'] }}
+  when: not _backup_creds_ok
+  tags: [never, backup, rpm-backup]
+
+- name: "RPM Backup | Resolve SMB mount point"
+  ansible.builtin.set_fact:
+    _backup_check_path: >-
+      {{ smb_shares | default([])
+         | map(attribute='mount_point')
+         | map('replace', '~', ansible_facts.user_dir)
+         | select('in', rpm_backup_base_dir)
+         | sort(reverse=true)
+         | list
+         | first
+         | default(rpm_backup_base_dir | dirname) }}
+  when: _backup_creds_ok
+  tags: [never, backup, rpm-backup]
+
+- name: "RPM Backup | Stat mount point"
+  ansible.builtin.stat:
+    path: "{{ _backup_check_path }}"
+  register: _backup_share_stat
+  when: _backup_creds_ok
+  tags: [never, backup, rpm-backup]
+
+- name: "RPM Backup | Stat home directory"
+  ansible.builtin.stat:
+    path: "{{ ansible_facts.user_dir }}"
+  register: _backup_home_stat
+  when: _backup_creds_ok
+  tags: [never, backup, rpm-backup]
+
+- name: "RPM Backup | Check share is mounted"
+  ansible.builtin.set_fact:
+    _backup_mount_ok: >-
+      {{ _backup_share_stat.stat.exists | default(false)
+         and _backup_share_stat.stat.dev != _backup_home_stat.stat.dev }}
+  when: _backup_creds_ok
+  tags: [never, backup, rpm-backup]
+
+- name: "RPM Backup | Record skipped backup — share not mounted"
+  ansible.builtin.set_fact:
+    _run_errors: >-
+      {{ _run_errors + ['RPM backup skipped — backup share not mounted at '
+         + rpm_backup_base_dir + '. Check NAS connectivity and SMB credentials'] }}
+  when: _backup_creds_ok and not (_backup_mount_ok | default(false))
+  tags: [never, backup, rpm-backup]
+
+- name: "RPM Backup | Run"
+  tags: [never, backup, rpm-backup]
+  when: (_backup_creds_ok | default(false)) and (_backup_mount_ok | default(false))
+  block:
+    - name: "RPM Backup | Set run variables"
+      ansible.builtin.set_fact:
+        _rb_base_dir: "{{ rpm_backup_base_dir }}"
+        _rb_tmp_dir: "{{ rpm_backup_tmp_dir }}"
+        _rb_date: "{{ ansible_facts.date_time.date }}"
+        _bk_max: "{{ backup_max_archives | int }}"
+        _bk_min: "{{ backup_min_archives | int }}"
+        _bk_monthly: "{{ backup_monthly_months | int }}"
+        _bk_age_secs: "{{ backup_max_age_days | int * 86400 }}"
+
+    - name: "RPM Backup | Prepare staging directory"
+      ansible.builtin.file:
+        path: "{{ _rb_tmp_dir }}/configs"
+        state: "{{ item }}"
+        mode: '0700'
+      loop: [absent, directory]
+
+    - name: "RPM Backup | Ensure destination directory exists"
+      ansible.builtin.file:
+        path: "{{ _rb_base_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: "RPM Backup | Validate package names"
+      ansible.builtin.command:
+        cmd: "rpm -q {{ item.key }}"
+      loop: "{{ rpm_configs | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+      register: _rb_pkg_check
+      changed_when: false
+      failed_when: false
+      when: not (item.value.no_package_check | default(false))
+
+    - name: "RPM Backup | Record warnings for uninstalled packages"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{ _run_errors + ['RPM backup: \'' + item.item.key
+             + '\' is not installed — entry in vars/rpm_configs.yml may be misspelled'] }}
+      loop: "{{ _rb_pkg_check.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item.key }}"
+      when: item.rc | default(0) != 0
+
+    - name: "RPM Backup | Stat config paths"
+      ansible.builtin.stat:
+        path: "{{ item.1 | replace('~', ansible_facts.user_dir) }}"
+      loop: "{{ rpm_configs | dict2items | subelements('value.paths') }}"
+      loop_control:
+        label: "{{ item.0.key }}: {{ item.1 }}"
+      register: _rb_path_stats
+      failed_when: false
+
+    - name: "RPM Backup | Build list of existing config paths"
+      ansible.builtin.set_fact:
+        _rb_existing_paths: >-
+          {{ _rb_path_stats.results
+             | selectattr('stat.exists', 'equalto', true)
+             | map(attribute='item')
+             | list }}
+
+    - name: "RPM Backup | Build set of packages with at least one existing path"
+      ansible.builtin.set_fact:
+        _rb_packages_with_config: >-
+          {{ _rb_existing_paths | map('first') | map(attribute='key') | unique | list }}
+
+    - name: "RPM Backup | Record warnings for entries with no config found"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{ _run_errors + ['RPM backup: no config found for \'' + item.key
+             + '\' — check paths in vars/rpm_configs.yml'] }}
+      loop: "{{ rpm_configs | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+      when: item.key not in _rb_packages_with_config
+
+    - name: "RPM Backup | Ensure staging subdirectories exist"
+      ansible.builtin.file:
+        path: >-
+          {{ _rb_tmp_dir }}/configs/{{ item.0.key }}/{{ item.1
+             | replace('~/', '')
+             | replace('~', '')
+             | dirname }}
+        state: directory
+        mode: '0755'
+      loop: "{{ _rb_existing_paths }}"
+      loop_control:
+        label: "{{ item.0.key }}: {{ item.1 }}"
+
+    - name: "RPM Backup | Sync existing config paths to staging"
+      ansible.posix.synchronize:
+        src: "{{ item.1 | replace('~', ansible_facts.user_dir) }}/"
+        dest: >-
+          {{ _rb_tmp_dir }}/configs/{{ item.0.key }}/{{ item.1
+             | replace('~/', '')
+             | replace('~', '') }}/
+        recursive: true
+        delete: true
+      loop: "{{ _rb_existing_paths }}"
+      loop_control:
+        label: "{{ item.0.key }}: {{ item.1 }}"
+      register: _rb_sync_results
+      failed_when: false
+
+    - name: "RPM Backup | Track sync failures"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{ _run_errors
+             + (['RPM backup: sync failed for ' + item.item.0.key + ': ' + item.item.1]
+                if (item.rc | default(0)) != 0 else []) }}
+      loop: "{{ _rb_sync_results.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item.0.key }}: {{ item.item.1 }}"
+      when: _rb_existing_paths | length > 0
+
+    - name: "RPM Backup | Compress to dated archive"
+      community.general.archive:
+        path: "{{ _rb_tmp_dir }}/configs"
+        dest: "{{ _rb_tmp_dir }}/rpm_backup_{{ _rb_date }}.tar.gz"
+        format: gz
+        mode: '0644'
+
+    - name: "RPM Backup | Copy dated archive to share"
+      ansible.builtin.command:
+        cmd: >-
+          cp {{ _rb_tmp_dir }}/rpm_backup_{{ _rb_date }}.tar.gz
+             {{ _rb_base_dir }}/rpm_backup_{{ _rb_date }}.tar.gz
+      changed_when: true
+
+    - name: "RPM Backup | Update latest snapshot"
+      ansible.builtin.command:
+        cmd: >-
+          cp {{ _rb_tmp_dir }}/rpm_backup_{{ _rb_date }}.tar.gz
+             {{ _rb_base_dir }}/rpm_backup_latest.tar.gz
+      changed_when: true
+
+    - name: "RPM Backup | Update monthly snapshot"
+      ansible.builtin.command:
+        cmd: >-
+          cp {{ _rb_base_dir }}/rpm_backup_{{ _rb_date }}.tar.gz
+             {{ _rb_base_dir }}/rpm_backup_monthly_{{ _rb_date[:7] }}.tar.gz
+      changed_when: true
+      when: _bk_monthly | int > 0
+
+    - name: "RPM Backup | Clean staging directory"
+      ansible.builtin.file:
+        path: "{{ _rb_tmp_dir }}"
+        state: absent
+
+    - name: "RPM Backup | Find dated archives"
+      ansible.builtin.find:
+        paths: "{{ _rb_base_dir }}"
+        patterns: "rpm_backup_[0-9]*.tar.gz"
+        file_type: file
+      register: _rb_archives
+
+    - name: "RPM Backup | Delete excess dated archives"
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: >-
+        {{ (_rb_archives.files
+            | sort(attribute='mtime', reverse=true))[_bk_max | default(0) | int:] }}
+      loop_control:
+        label: "{{ item.path | basename }}"
+
+    - name: "RPM Backup | Delete dated archives older than max age"
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: >-
+        {{ (_rb_archives.files
+            | sort(attribute='mtime', reverse=true))[_bk_min | default(0) | int:] }}
+      loop_control:
+        label: "{{ item.path | basename }}"
+      when: ((ansible_facts.date_time.epoch | int) - (item.mtime | int)) > (_bk_age_secs | int)
+
+    - name: "RPM Backup | Find monthly archives"
+      ansible.builtin.find:
+        paths: "{{ _rb_base_dir }}"
+        patterns: "rpm_backup_monthly_*.tar.gz"
+        file_type: file
+      register: _rb_monthly_archives
+      when: _bk_monthly | int > 0
+
+    - name: "RPM Backup | Delete excess monthly archives"
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: >-
+        {{ (_rb_monthly_archives.files | default([])
+            | sort(attribute='mtime', reverse=true))[_bk_monthly | default(0) | int:] }}
+      loop_control:
+        label: "{{ item.path | basename }}"
+      when: _bk_monthly | int > 0
+
+    - name: "RPM Backup | Record success"
+      ansible.builtin.set_fact:
+        _backup_results: >-
+          {{ _backup_results
+             + ['RPM backup completed: rpm_backup_' + _rb_date + '.tar.gz'] }}
+
+  rescue:
+    - name: "RPM Backup | Record failure"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{ (_run_errors | default([])) + ['RPM backup failed'
+             + ' — check share is accessible at ' + rpm_backup_base_dir] }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RPM RESTORE
+# ─────────────────────────────────────────────────────────────────────────────
+
+- name: "RPM Restore | Check SMB credentials are available"
+  ansible.builtin.set_fact:
+    _restore_creds_ok: "{{ smb_credentials is defined }}"
+  tags: [never, restore, rpm-restore]
+
+- name: "RPM Restore | Record skipped restore — no SMB credentials"
+  ansible.builtin.set_fact:
+    _run_errors: >-
+      {{ _run_errors + ['RPM restore skipped — SMB credentials not available.'
+         + ' Create vars/secrets.yml from vars/secrets.yml.template first'] }}
+  when: not _restore_creds_ok
+  tags: [never, restore, rpm-restore]
+
+- name: "RPM Restore | Resolve SMB mount point"
+  ansible.builtin.set_fact:
+    _restore_check_path: >-
+      {{ smb_shares | default([])
+         | map(attribute='mount_point')
+         | map('replace', '~', ansible_facts.user_dir)
+         | select('in', rpm_backup_base_dir)
+         | sort(reverse=true)
+         | list
+         | first
+         | default(rpm_backup_base_dir | dirname) }}
+  when: _restore_creds_ok
+  tags: [never, restore, rpm-restore]
+
+- name: "RPM Restore | Stat mount point"
+  ansible.builtin.stat:
+    path: "{{ _restore_check_path }}"
+  register: _restore_share_stat
+  when: _restore_creds_ok
+  tags: [never, restore, rpm-restore]
+
+- name: "RPM Restore | Stat home directory"
+  ansible.builtin.stat:
+    path: "{{ ansible_facts.user_dir }}"
+  register: _restore_home_stat
+  when: _restore_creds_ok
+  tags: [never, restore, rpm-restore]
+
+- name: "RPM Restore | Check share is mounted"
+  ansible.builtin.set_fact:
+    _restore_mount_ok: >-
+      {{ _restore_share_stat.stat.exists | default(false)
+         and _restore_share_stat.stat.dev != _restore_home_stat.stat.dev }}
+  when: _restore_creds_ok
+  tags: [never, restore, rpm-restore]
+
+- name: "RPM Restore | Record skipped restore — share not mounted"
+  ansible.builtin.set_fact:
+    _run_errors: >-
+      {{ _run_errors + ['RPM restore skipped — backup share not mounted at '
+         + rpm_backup_base_dir + '. Check NAS connectivity and SMB credentials'] }}
+  when: _restore_creds_ok and not (_restore_mount_ok | default(false))
+  tags: [never, restore, rpm-restore]
+
+- name: "RPM Restore | Run"
+  tags: [never, restore, rpm-restore]
+  when: (_restore_creds_ok | default(false)) and (_restore_mount_ok | default(false))
+  block:
+    - name: "RPM Restore | Set run variables"
+      ansible.builtin.set_fact:
+        _rr_base_dir: "{{ rpm_backup_base_dir }}"
+        _rr_tmp_dir: "{{ rpm_backup_tmp_dir }}"
+
+    - name: "RPM Restore | Prepare staging directory"
+      ansible.builtin.file:
+        path: "{{ _rr_tmp_dir }}"
+        state: "{{ item }}"
+        mode: '0700'
+      loop: [absent, directory]
+
+    - name: "RPM Restore | Extract latest archive to staging"
+      ansible.builtin.unarchive:
+        src: "{{ _rr_base_dir }}/rpm_backup_latest.tar.gz"
+        dest: "{{ _rr_tmp_dir }}"
+        remote_src: true
+
+    - name: "RPM Restore | Stat config paths in staging"
+      ansible.builtin.stat:
+        path: >-
+          {{ _rr_tmp_dir }}/configs/{{ item.0.key }}/{{ item.1
+             | replace('~/', '')
+             | replace('~', '') }}
+      loop: "{{ rpm_configs | dict2items | subelements('value.paths') }}"
+      loop_control:
+        label: "{{ item.0.key }}: {{ item.1 }}"
+      register: _rr_staged_stats
+      failed_when: false
+
+    - name: "RPM Restore | Build list of paths present in archive"
+      ansible.builtin.set_fact:
+        _rr_paths_to_restore: >-
+          {{ _rr_staged_stats.results
+             | selectattr('stat.exists', 'equalto', true)
+             | map(attribute='item')
+             | list }}
+
+    - name: "RPM Restore | Ensure destination parent directories exist"
+      ansible.builtin.file:
+        path: "{{ item.1 | replace('~', ansible_facts.user_dir) | dirname }}"
+        state: directory
+        mode: '0755'
+      loop: "{{ _rr_paths_to_restore }}"
+      loop_control:
+        label: "{{ item.0.key }}: {{ item.1 }}"
+
+    - name: "RPM Restore | Sync configs from staging to home"
+      ansible.posix.synchronize:
+        src: >-
+          {{ _rr_tmp_dir }}/configs/{{ item.0.key }}/{{ item.1
+             | replace('~/', '')
+             | replace('~', '') }}/
+        dest: "{{ item.1 | replace('~', ansible_facts.user_dir) }}/"
+        recursive: true
+        delete: true
+      loop: "{{ _rr_paths_to_restore }}"
+      loop_control:
+        label: "{{ item.0.key }}: {{ item.1 }}"
+      register: _rr_sync_results
+      failed_when: false
+
+    - name: "RPM Restore | Track sync failures"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{ _run_errors
+             + (['RPM restore: sync failed for ' + item.item.0.key + ': ' + item.item.1]
+                if (item.rc | default(0)) != 0 else []) }}
+      loop: "{{ _rr_sync_results.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item.0.key }}: {{ item.item.1 }}"
+      when: _rr_paths_to_restore | length > 0
+
+    - name: "RPM Restore | Clean staging directory"
+      ansible.builtin.file:
+        path: "{{ _rr_tmp_dir }}"
+        state: absent
+
+    - name: "RPM Restore | Record success"
+      ansible.builtin.set_fact:
+        _backup_results: >-
+          {{ _backup_results
+             + ['RPM config restore completed from rpm_backup_latest.tar.gz'] }}
+
+  rescue:
+    - name: "RPM Restore | Record failure"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{ (_run_errors | default([])) + ['RPM restore failed'
+             + ' — check rpm_backup_latest.tar.gz exists at '
+             + rpm_backup_base_dir] }}

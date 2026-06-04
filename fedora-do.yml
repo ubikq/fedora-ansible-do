@@ -24,7 +24,8 @@
 # Available tags:
 #   always | all-apps | desktop | tools | graphics | media | development |
 #   productivity | communication | gaming | docker | virt | smb | gnome |
-#   firmware | fonts | shell | git-config
+#   firmware | fonts | shell | git-config |
+#   backup | restore | flatpak-backup | flatpak-restore | rpm-backup | rpm-restore
 # =============================================================================
 
 - name: Fedora Workstation Setup
@@ -56,6 +57,16 @@
         file: vars/gnome.yml
       tags: always
 
+    - name: "Pre | Load backup configuration"
+      ansible.builtin.include_vars:
+        file: vars/backup.yml
+      tags: always
+
+    - name: "Pre | Load RPM config backup registry"
+      ansible.builtin.include_vars:
+        file: vars/rpm_configs.yml
+      tags: always
+
     - name: "Pre | Load Git configuration (if present)"
       ansible.builtin.include_vars:
         file: vars/git.yml
@@ -71,9 +82,28 @@
 
     - name: "Pre | Initialize run tracking"
       ansible.builtin.set_fact:
-        _run_errors:      []
-        _changed_rpms:    []
+        _run_errors:       []
+        _changed_rpms:     []
         _changed_flatpaks: []
+        _backup_results:   []
+      tags: always
+
+    - name: "Pre | Test sudo (become) access"
+      become: true
+      ansible.builtin.command:
+        cmd: echo "become ok"
+      register: _become_check
+      changed_when: false
+      failed_when: false
+      tags: always
+
+    - name: "Pre | Abort if sudo access unavailable"
+      ansible.builtin.fail:
+        msg: >-
+          Sudo access failed — the playbook was probably run without -K.
+          Re-run with: ansible-playbook fedora-do.yml -K -J
+          (-K = sudo password prompt, -J = vault password for secrets.yml)
+      when: (_become_check.rc | default(-1)) != 0
       tags: always
 
     - name: "Pre | Verify running on Fedora"
@@ -124,6 +154,9 @@
     - name: "Include | Post-install cleanup"
       ansible.builtin.import_tasks: tasks/cleanup.yml
 
+    - name: "Include | Flatpak config backup and restore"
+      ansible.builtin.import_tasks: tasks/backup.yml
+
   post_tasks:
     - name: "Done | Generate and display deployment report"
       vars:
@@ -148,6 +181,12 @@
           {% endif %}
           {% if (_changed_rpms | length == 0) and (_changed_flatpaks | length == 0) %}
           All packages were already up to date — no changes made.
+          {% endif %}
+          {% if _backup_results | length > 0 %}
+          [BACKUP / RESTORE]
+          {% for msg in _backup_results %}
+            ✔  {{ msg }}
+          {% endfor %}
           {% endif %}
           {% if _run_errors | length > 0 %}
           {{ esc }}[1;31m[⚠  FAILURES — ACTION REQUIRED]{{ esc }}[0m

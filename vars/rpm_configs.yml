@@ -1,0 +1,77 @@
+---
+# =============================================================================
+# vars/rpm_configs.yml — RPM Application Configuration Backup Registry
+# =============================================================================
+# Declares which applications have configuration worth backing up and where
+# those configuration directories live. Only entries listed here are included
+# in the rpm-backup / rpm-restore operations.
+#
+# Entry format:
+#   <label>:
+#     no_package_check: false    # set true for non-RPM entries (no rpm -q check)
+#     paths:
+#       - ~/path/to/config/dir   # must be DIRECTORIES — individual files are not
+#       - ~/another/path         # supported; use the parent directory instead
+#
+# Behaviour:
+#   - Package names are validated via rpm -q (unless no_package_check: true).
+#     A warning is added to the report if a package is not installed — this
+#     usually indicates a typo in the label.
+#   - Config paths are checked for existence before syncing. A warning is added
+#     if ALL paths for an entry are missing — this usually indicates a wrong path.
+#   - Individual missing paths are silently skipped (normal for apps not yet
+#     launched or that create config dirs on first use).
+# =============================================================================
+
+rpm_configs:
+
+  # ── Development ───────────────────────────────────────────────────────────────
+  code:
+    paths:
+      - ~/.config/Code/User          # settings.json, keybindings.json, snippets/
+
+  # ── System tools ──────────────────────────────────────────────────────────────
+  btrfs-assistant:
+    paths:
+      - ~/.config/btrfs-assistant
+
+  # ── Graphics ──────────────────────────────────────────────────────────────────
+  gimp:
+    paths:
+      - ~/.config/GIMP               # preferences, brushes, scripts, palettes
+
+  inkscape:
+    paths:
+      - ~/.config/inkscape           # preferences, templates, palettes
+
+  rawtherapee:
+    paths:
+      - ~/.config/RawTherapee        # preferences and processing profiles
+
+  darktable:
+    paths:
+      - ~/.config/darktable          # preferences and styles
+      - ~/.local/share/darktable     # presets and lua scripts (excludes library.db)
+
+  # ── Media ─────────────────────────────────────────────────────────────────────
+  vlc:
+    paths:
+      - ~/.config/vlc                # preferences, playlist, MLV
+
+  mpv:
+    paths:
+      - ~/.config/mpv                # config, input bindings, scripts, shaders
+
+  rhythmbox:
+    paths:
+      - ~/.local/share/rhythmbox     # library metadata and plugin config
+
+  HandBrake-gui:
+    paths:
+      - ~/.config/ghb                # presets and preferences
+
+  # ── Non-RPM entries (no_package_check: true) ──────────────────────────────────
+  flatpak-overrides:
+    no_package_check: true
+    paths:
+      - ~/.local/share/flatpak/overrides   # per-app permission overrides (set by Flatseal)
