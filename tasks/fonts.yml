@@ -2,27 +2,39 @@
 # =============================================================================
 # tasks/fonts.yml — Font Installation
 # =============================================================================
-# Installs developer and desktop fonts available in Fedora repos,
-# then rebuilds the fontconfig cache.
+# Installs developer and desktop fonts available in Fedora repos one at a time
+# so a single unavailable package doesn't abort the rest, then rebuilds the
+# fontconfig cache if anything changed.
 # =============================================================================
 
-- name: "Fonts | Install system fonts"
+- name: "Fonts | Install font packages"
   become: true
   ansible.builtin.dnf:
-    name:
-      - google-noto-sans-fonts
-      - google-noto-serif-fonts
-      - google-noto-mono-fonts
-      - google-roboto-fonts
-      - jetbrains-mono-fonts
-      - fira-code-fonts
-      - cascadia-code-fonts
+    name: "{{ item }}"
     state: present
-  register: fonts_installed
+  loop:
+    - google-noto-sans-fonts
+    - google-noto-serif-fonts
+    - google-noto-mono-fonts
+    - google-roboto-fonts
+    - jetbrains-mono-fonts
+    - fira-code-fonts
+    - cascadia-code-fonts
+  register: _fonts_result
+  failed_when: false
+  tags: fonts
+
+- name: "Fonts | Track results"
+  ansible.builtin.set_fact:
+    _changed_rpms: "{{ _changed_rpms + ([item.item + ' (fonts)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:   "{{ _run_errors   + (['Font install failed: ' + item.item] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _fonts_result.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: fonts
 
 - name: "Fonts | Rebuild font cache"
   ansible.builtin.command: fc-cache --force
   changed_when: false
-  when: fonts_installed.changed
+  when: _fonts_result.changed | default(false)
   tags: fonts

@@ -7,57 +7,65 @@
 # All tasks are tagged 'always' — repos must be in place before packages.
 # =============================================================================
 
-- name: "Repos | Enable RPM Fusion Free"
-  become: true
-  ansible.builtin.dnf:
-    name: "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ ansible_facts.distribution_major_version }}.noarch.rpm"
-    state: present
-    disable_gpg_check: true
+# ── RPM Fusion + multimedia (grouped: FFmpeg/codecs depend on RPM Fusion) ─────
+- block:
+    - name: "Repos | Enable RPM Fusion Free"
+      become: true
+      ansible.builtin.dnf:
+        name: "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ ansible_facts.distribution_major_version }}.noarch.rpm"
+        state: present
+        disable_gpg_check: true
+
+    - name: "Repos | Enable RPM Fusion NonFree"
+      become: true
+      ansible.builtin.dnf:
+        name: "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ ansible_facts.distribution_major_version }}.noarch.rpm"
+        state: present
+        disable_gpg_check: true
+
+    - name: "Repos | Install RPM Fusion appstream metadata"
+      become: true
+      ansible.builtin.dnf:
+        name:
+          - rpmfusion-free-appstream-data
+          - rpmfusion-nonfree-appstream-data
+        state: present
+
+    - name: "Repos | Switch to full FFmpeg from RPM Fusion"
+      become: true
+      ansible.builtin.dnf:
+        name:
+          - ffmpeg
+          - ffmpeg-libs
+        state: present
+        allowerasing: true
+
+    - name: "Repos | Install RPM Fusion multimedia codec group"
+      become: true
+      ansible.builtin.dnf:
+        name: "@multimedia"
+        state: present
+        install_weak_deps: false
+        exclude: PackageKit-gstreamer-plugin
+  rescue:
+    - name: "Repos | Record RPM Fusion / multimedia setup failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['RPM Fusion / multimedia repo setup failed — media codecs and FFmpeg may be missing'] }}"
   tags: always
 
-- name: "Repos | Enable RPM Fusion NonFree"
-  become: true
-  ansible.builtin.dnf:
-    name: "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ ansible_facts.distribution_major_version }}.noarch.rpm"
-    state: present
-    disable_gpg_check: true
-  tags: always
-
-- name: "Repos | Install RPM Fusion appstream metadata"
-  become: true
-  ansible.builtin.dnf:
-    name:
-      - rpmfusion-free-appstream-data
-      - rpmfusion-nonfree-appstream-data
-    state: present
-  tags: always
-
-- name: "Repos | Switch to full FFmpeg from RPM Fusion"
-  become: true
-  ansible.builtin.dnf:
-    name:
-      - ffmpeg
-      - ffmpeg-libs
-    state: present
-    allowerasing: true    # replaces the Fedora-provided ffmpeg-free
-  tags: always
-
-- name: "Repos | Install RPM Fusion multimedia codec group"
-  become: true
-  ansible.builtin.dnf:
-    name: "@multimedia"
-    state: present
-    install_weak_deps: false
-    exclude: PackageKit-gstreamer-plugin
-  tags: always
-
-- name: "Repos | Add Microsoft VS Code repository"
-  become: true
-  ansible.builtin.yum_repository:
-    name: vscode
-    description: Visual Studio Code
-    baseurl: "https://packages.microsoft.com/yumrepos/vscode"
-    gpgcheck: true
-    gpgkey: "https://packages.microsoft.com/keys/microsoft.asc"
-    enabled: true
+# ── VS Code repository ─────────────────────────────────────────────────────────
+- block:
+    - name: "Repos | Add Microsoft VS Code repository"
+      become: true
+      ansible.builtin.yum_repository:
+        name: vscode
+        description: Visual Studio Code
+        baseurl: "https://packages.microsoft.com/yumrepos/vscode"
+        gpgcheck: true
+        gpgkey: "https://packages.microsoft.com/keys/microsoft.asc"
+        enabled: true
+  rescue:
+    - name: "Repos | Record VS Code repository failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['VS Code repository setup failed — VS Code may not install'] }}"
   tags: always

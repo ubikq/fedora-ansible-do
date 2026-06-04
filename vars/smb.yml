@@ -16,26 +16,58 @@
 #       password: other_pass
 #
 # The 'cred_key' field below references the matching key in smb_credentials.
+#
+# mount_point accepts either a full absolute path or a ~/... path:
+#   mount_point: "~/Mounts/media"       ← expanded to $HOME/Mounts/media
+#   mount_point: "/mnt/nas/media"       ← used as-is
 # =============================================================================
 
 smb_shares:
-  - name: "Media"
-    src: "//192.168.1.100/Media"
-    mount_point: "/mnt/nas/Media"
+  - name: "archive"
+    src: "//192.168.1.10/archive"
+    mount_point: "~/Mounts/archive"
     cred_key: nas_primary             # matches key in smb_credentials (secrets.yml)
     cred_file: /etc/samba/.creds_nas_primary
-    options: "uid=1000,gid=1000,iocharset=utf8,vers=3.0,_netdev"
+    options: "uid=1000,gid=1000,iocharset=utf8,_netdev"
 
-  - name: "Backup"
-    src: "//192.168.1.100/Backup"
-    mount_point: "/mnt/nas/Backup"
+  - name: "backups"
+    src: "//192.168.1.10/backups"
+    mount_point: "~/Mounts/backups"
     cred_key: nas_primary
     cred_file: /etc/samba/.creds_nas_primary
-    options: "uid=1000,gid=1000,iocharset=utf8,vers=3.0,_netdev"
+    options: "uid=1000,gid=1000,iocharset=utf8,_netdev"
 
-  - name: "Documents"
-    src: "//192.168.1.101/Documents"
-    mount_point: "/mnt/nas/Documents"
-    cred_key: nas_docs
-    cred_file: /etc/samba/.creds_nas_docs
-    options: "uid=1000,gid=1000,iocharset=utf8,vers=3.0,_netdev"
+  - name: "downloads"
+    src: "//192.168.1.10/downloads"
+    mount_point: "~/Mounts/downloads"
+    cred_key: nas_primary
+    cred_file: /etc/samba/.creds_nas_primary
+    options: "uid=1000,gid=1000,iocharset=utf8,_netdev"
+
+  - name: "intermediate_save"
+    src: "//192.168.1.10/intermediate_save"
+    mount_point: "~/Mounts/intermediate_save"
+    cred_key: nas_primary
+    cred_file: /etc/samba/.creds_nas_primary
+    options: "uid=1000,gid=1000,iocharset=utf8,_netdev"
+
+  - name: "media"
+    src: "//192.168.1.10/media"
+    mount_point: "~/Mounts/media"
+    cred_key: nas_primary
+    cred_file: /etc/samba/.creds_nas_primary
+    options: "uid=1000,gid=1000,iocharset=utf8,_netdev"
+
+  - name: "personal"
+    src: "//192.168.1.10/personal"
+    mount_point: "~/Mounts/personal"
+    cred_key: nas_primary
+    cred_file: /etc/samba/.creds_nas_primary
+    options: "uid=1000,gid=1000,iocharset=utf8,_netdev"
+
+  - name: "rootshare"
+    src: "//192.168.1.10/rootshare"
+    mount_point: "~/Mounts/rootshare"
+    cred_key: nas_primary
+    cred_file: /etc/samba/.creds_nas_primary
+    options: "uid=1000,gid=1000,iocharset=utf8,_netdev"

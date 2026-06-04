@@ -54,12 +54,12 @@ app_catalog:
       - timeshift
       - rsync
       - rclone
-      - neofetch
       - tmux
       - eza
       - bat
       - fzf
       - restic
+      - fastfetch
     flatpak:
       - com.github.tchx84.Flatseal
       - io.missioncenter.MissionCenter
@@ -89,7 +89,6 @@ app_catalog:
       - org.videolan.VLC
       - io.github.celluloid_player.Celluloid
       - org.gnome.Lollypop
-      - com.spotify.Client
       - org.kde.kdenlive
 
   # ── Development ─────────────────────────────────────────────────────────────

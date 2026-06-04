@@ -67,6 +67,13 @@
       no_log: true
       tags: always
 
+    - name: "Pre | Initialize run tracking"
+      ansible.builtin.set_fact:
+        _run_errors:      []
+        _changed_rpms:    []
+        _changed_flatpaks: []
+      tags: always
+
     - name: "Pre | Verify running on Fedora"
       ansible.builtin.assert:
         that:
@@ -116,31 +123,64 @@
       ansible.builtin.import_tasks: tasks/cleanup.yml
 
   post_tasks:
-    - name: "Done | Summary"
-      ansible.builtin.debug:
-        msg: |
+    - name: "Done | Generate and display deployment report"
+      vars:
+        esc: "\x1b"
+        log_file: >-
+          ./logs/install_report_{{ ansible_facts['date_time']['year'] }}{{ ansible_facts['date_time']['month'] }}{{ ansible_facts['date_time']['day'] }}.log
+        report_content: |
           ════════════════════════════════════════════════════════════════
-          ✅  Fedora setup complete!
-
-          Requires logout / reboot to take effect:
-            • Docker group membership   →  newgrp docker  (or log out)
-            • libvirt/kvm group         →  log out and back in
-            • Default shell change      →  log out and back in
-            • GNOME extensions          →  log out and back in
-            • SMB _netdev mounts        →  reboot to verify automount
-
-          Run modes:  (-K = --ask-become-pass,  -J = --ask-vault-pass)
-            Full run (everything):
-              ansible-playbook fedora-do.yml -K -J
-            Specific tasks only:
-              ansible-playbook fedora-do.yml -K --tags "tools,media"
-            Full run, skip something:
-              ansible-playbook fedora-do.yml -K --skip-tags gaming
-
-          Available tags:
-            always | all-apps | desktop | tools | graphics | media |
-            development | productivity | communication | gaming |
-            docker | virt | smb | gnome |
-            firmware | fonts | shell | git-config
+          FEDORA SETUP REPORT — {{ ansible_facts['date_time']['date'] }}  {{ ansible_facts['date_time']['time'] }}
+          ════════════════════════════════════════════════════════════════
+          {% if _changed_rpms | length > 0 %}
+          [RPM PACKAGES INSTALLED]
+          {% for pkg in _changed_rpms %}
+            ✔  {{ pkg }}
+          {% endfor %}
+          {% endif %}
+          {% if _changed_flatpaks | length > 0 %}
+          [FLATPAK APPS INSTALLED]
+          {% for app in _changed_flatpaks %}
+            ✔  {{ app }}
+          {% endfor %}
+          {% endif %}
+          {% if (_changed_rpms | length == 0) and (_changed_flatpaks | length == 0) %}
+          All packages were already up to date — no changes made.
+          {% endif %}
+          {% if _run_errors | length > 0 %}
+          {{ esc }}[1;31m[⚠  FAILURES — ACTION REQUIRED]{{ esc }}[0m
+          {% for err in _run_errors %}
+            {{ esc }}[31m✖  {{ err }}{{ esc }}[0m
+          {% endfor %}
+          {% endif %}
+          [REQUIRES LOGOUT OR REBOOT]
+            • Docker group membership    →  newgrp docker  (or log out)
+            • libvirt/kvm group          →  log out and back in
+            • Default shell change       →  log out and back in
+            • GNOME extensions           →  log out and back in
+            • SMB _netdev mounts         →  reboot to verify automount
           ════════════════════════════════════════════════════════════════
       tags: always
+      block:
+        - name: "Done | Print deployment report"
+          ansible.builtin.pause:
+            seconds: 1
+            prompt: "{{ report_content }}"
+
+        - name: "Done | Ensure log directory exists"
+          ansible.builtin.file:
+            path: ./logs
+            state: directory
+            mode: '0755'
+
+        - name: "Done | Read existing log if present"
+          ansible.builtin.slurp:
+            path: "{{ log_file }}"
+          register: _existing_log
+          failed_when: false
+
+        - name: "Done | Save deployment report to log"
+          ansible.builtin.copy:
+            dest: "{{ log_file }}"
+            content: "{{ (_existing_log.content | default('') | b64decode) }}{{ report_content }}"
+            mode: '0644'

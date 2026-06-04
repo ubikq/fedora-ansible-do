@@ -3,91 +3,189 @@
 # tasks/packages.yml — RPM Package Installation
 # =============================================================================
 # Reads rpm lists from vars/packages.yml (app_catalog).
-# Each block is tagged with its category name so categories can be selected
-# individually at run time with --tags.
-#
-# The base category is tagged 'always' and is never skipped.
+# Each package is installed individually so results are tracked per package.
+# A single tracking task per category appends to _changed_rpms (installed)
+# and _run_errors (failed) for the end-of-run report.
 # =============================================================================
 
 # ── Base (always) ─────────────────────────────────────────────────────────────
-- name: "Packages [base] | Install base RPM packages"
+- name: "Packages [base] | Install RPM packages"
   become: true
   ansible.builtin.dnf:
-    name: "{{ app_catalog.base.rpm }}"
+    name: "{{ item }}"
     state: present
-  when: app_catalog.base.rpm | default([], true) | length > 0
+  loop: "{{ app_catalog.base.rpm | default([], true) }}"
+  register: _pkg_base
+  failed_when: false
+  tags: always
+
+- name: "Packages [base] | Track results"
+  ansible.builtin.set_fact:
+    _changed_rpms: "{{ _changed_rpms + ([item.item + ' (base)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:   "{{ _run_errors   + (['RPM install failed: ' + item.item + ' (base)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _pkg_base.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: always
 
 # ── Desktop ───────────────────────────────────────────────────────────────────
-- name: "Packages [desktop] | Install desktop RPM packages"
+- name: "Packages [desktop] | Install RPM packages"
   become: true
   ansible.builtin.dnf:
-    name: "{{ app_catalog.desktop.rpm }}"
+    name: "{{ item }}"
     state: present
-  when: app_catalog.desktop.rpm | default([], true) | length > 0
+  loop: "{{ app_catalog.desktop.rpm | default([], true) }}"
+  register: _pkg_desktop
+  failed_when: false
+  tags: desktop
+
+- name: "Packages [desktop] | Track results"
+  ansible.builtin.set_fact:
+    _changed_rpms: "{{ _changed_rpms + ([item.item + ' (desktop)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:   "{{ _run_errors   + (['RPM install failed: ' + item.item + ' (desktop)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _pkg_desktop.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: desktop
 
 # ── Tools ─────────────────────────────────────────────────────────────────────
-- name: "Packages [tools] | Install tools RPM packages"
+- name: "Packages [tools] | Install RPM packages"
   become: true
   ansible.builtin.dnf:
-    name: "{{ app_catalog.tools.rpm }}"
+    name: "{{ item }}"
     state: present
-  when: app_catalog.tools.rpm | default([], true) | length > 0
+  loop: "{{ app_catalog.tools.rpm | default([], true) }}"
+  register: _pkg_tools
+  failed_when: false
+  tags: tools
+
+- name: "Packages [tools] | Track results"
+  ansible.builtin.set_fact:
+    _changed_rpms: "{{ _changed_rpms + ([item.item + ' (tools)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:   "{{ _run_errors   + (['RPM install failed: ' + item.item + ' (tools)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _pkg_tools.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: tools
 
 # ── Graphics ──────────────────────────────────────────────────────────────────
-- name: "Packages [graphics] | Install graphics RPM packages"
+- name: "Packages [graphics] | Install RPM packages"
   become: true
   ansible.builtin.dnf:
-    name: "{{ app_catalog.graphics.rpm }}"
+    name: "{{ item }}"
     state: present
-  when: app_catalog.graphics.rpm | default([], true) | length > 0
+  loop: "{{ app_catalog.graphics.rpm | default([], true) }}"
+  register: _pkg_graphics
+  failed_when: false
+  tags: graphics
+
+- name: "Packages [graphics] | Track results"
+  ansible.builtin.set_fact:
+    _changed_rpms: "{{ _changed_rpms + ([item.item + ' (graphics)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:   "{{ _run_errors   + (['RPM install failed: ' + item.item + ' (graphics)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _pkg_graphics.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: graphics
 
 # ── Media ─────────────────────────────────────────────────────────────────────
-- name: "Packages [media] | Install media RPM packages"
+- name: "Packages [media] | Install RPM packages"
   become: true
   ansible.builtin.dnf:
-    name: "{{ app_catalog.media.rpm }}"
+    name: "{{ item }}"
     state: present
-  when: app_catalog.media.rpm | default([], true) | length > 0
+  loop: "{{ app_catalog.media.rpm | default([], true) }}"
+  register: _pkg_media
+  failed_when: false
+  tags: media
+
+- name: "Packages [media] | Track results"
+  ansible.builtin.set_fact:
+    _changed_rpms: "{{ _changed_rpms + ([item.item + ' (media)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:   "{{ _run_errors   + (['RPM install failed: ' + item.item + ' (media)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _pkg_media.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: media
 
 # ── Development ───────────────────────────────────────────────────────────────
-- name: "Packages [development] | Install development RPM packages"
+- name: "Packages [development] | Install RPM packages"
   become: true
   ansible.builtin.dnf:
-    name: "{{ app_catalog.development.rpm }}"
+    name: "{{ item }}"
     state: present
-  when: app_catalog.development.rpm | default([], true) | length > 0
+  loop: "{{ app_catalog.development.rpm | default([], true) }}"
+  register: _pkg_development
+  failed_when: false
+  tags: development
+
+- name: "Packages [development] | Track results"
+  ansible.builtin.set_fact:
+    _changed_rpms: "{{ _changed_rpms + ([item.item + ' (development)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:   "{{ _run_errors   + (['RPM install failed: ' + item.item + ' (development)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _pkg_development.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: development
 
 # ── Productivity ──────────────────────────────────────────────────────────────
-- name: "Packages [productivity] | Install productivity RPM packages"
+- name: "Packages [productivity] | Install RPM packages"
   become: true
   ansible.builtin.dnf:
-    name: "{{ app_catalog.productivity.rpm }}"
+    name: "{{ item }}"
     state: present
-  when: app_catalog.productivity.rpm | default([], true) | length > 0
+  loop: "{{ app_catalog.productivity.rpm | default([], true) }}"
+  register: _pkg_productivity
+  failed_when: false
+  tags: productivity
+
+- name: "Packages [productivity] | Track results"
+  ansible.builtin.set_fact:
+    _changed_rpms: "{{ _changed_rpms + ([item.item + ' (productivity)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:   "{{ _run_errors   + (['RPM install failed: ' + item.item + ' (productivity)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _pkg_productivity.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: productivity
 
 # ── Communication ─────────────────────────────────────────────────────────────
-- name: "Packages [communication] | Install communication RPM packages"
+- name: "Packages [communication] | Install RPM packages"
   become: true
   ansible.builtin.dnf:
-    name: "{{ app_catalog.communication.rpm }}"
+    name: "{{ item }}"
     state: present
-  when: app_catalog.communication.rpm | default([], true) | length > 0
+  loop: "{{ app_catalog.communication.rpm | default([], true) }}"
+  register: _pkg_communication
+  failed_when: false
+  tags: communication
+
+- name: "Packages [communication] | Track results"
+  ansible.builtin.set_fact:
+    _changed_rpms: "{{ _changed_rpms + ([item.item + ' (communication)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:   "{{ _run_errors   + (['RPM install failed: ' + item.item + ' (communication)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _pkg_communication.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: communication
 
 # ── Gaming ────────────────────────────────────────────────────────────────────
-- name: "Packages [gaming] | Install gaming RPM packages"
+- name: "Packages [gaming] | Install RPM packages"
   become: true
   ansible.builtin.dnf:
-    name: "{{ app_catalog.gaming.rpm }}"
+    name: "{{ item }}"
     state: present
-  when: app_catalog.gaming.rpm | default([], true) | length > 0
+  loop: "{{ app_catalog.gaming.rpm | default([], true) }}"
+  register: _pkg_gaming
+  failed_when: false
+  tags: gaming
+
+- name: "Packages [gaming] | Track results"
+  ansible.builtin.set_fact:
+    _changed_rpms: "{{ _changed_rpms + ([item.item + ' (gaming)'] if (item.changed | default(false)) else []) }}"
+    _run_errors:   "{{ _run_errors   + (['RPM install failed: ' + item.item + ' (gaming)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _pkg_gaming.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: gaming
 
 # ── All apps (loop over every non-base category) ──────────────────────────────
@@ -106,4 +204,14 @@
     - communication
     - gaming
   when: app_catalog[item].rpm | default([], true) | length > 0
+  register: _all_apps_rpm
+  failed_when: false
+  tags: all-apps
+
+- name: "Packages [all-apps] | Track results"
+  ansible.builtin.set_fact:
+    _run_errors: "{{ _run_errors + (['RPM install failed: ' + item.item + ' (all-apps)'] if (item.rc | default(0) != 0) else []) }}"
+  loop: "{{ _all_apps_rpm.results | default([]) }}"
+  loop_control:
+    label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: all-apps

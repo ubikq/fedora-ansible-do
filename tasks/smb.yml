@@ -48,10 +48,17 @@
   no_log: true
   tags: smb
 
+- name: "SMB | Ensure ~/Mounts parent directory exists"
+  ansible.builtin.file:
+    path: "{{ ansible_facts.user_dir }}/Mounts"
+    state: directory
+    mode: "0755"
+  tags: smb
+
 - name: "SMB | Create mount point directories"
   become: true
   ansible.builtin.file:
-    path: "{{ item.mount_point }}"
+    path: "{{ item.mount_point | replace('~', ansible_facts.user_dir) }}"
     state: directory
     mode: "0755"
   loop: "{{ smb_shares }}"
@@ -59,8 +66,8 @@
 
 - name: "SMB | Add shares to /etc/fstab and mount"
   become: true
-  ansible.builtin.mount:
-    path: "{{ item.mount_point }}"
+  ansible.posix.mount:
+    path: "{{ item.mount_point | replace('~', ansible_facts.user_dir) }}"
     src: "{{ item.src }}"
     fstype: cifs
     opts: "credentials={{ item.cred_file }},{{ item.options }}"
@@ -68,4 +75,26 @@
     dump: "0"
     passno: "0"
   loop: "{{ smb_shares }}"
+  register: _smb_mount_results
+  ignore_errors: true
+  tags: smb
+
+- name: "SMB | Record mount failures"
+  ansible.builtin.set_fact:
+    _run_errors: "{{ _run_errors + ['SMB mount failed: ' + item.item.name + ' (' + item.item.src + ')'] }}"
+  loop: "{{ _smb_mount_results.results | default([]) }}"
+  when: item.failed | default(false)
+  loop_control:
+    label: "{{ item.item.name }}"
+  tags: smb
+
+- name: "SMB | Remove directory for failed mount"
+  become: true
+  ansible.builtin.file:
+    path: "{{ item.item.mount_point | replace('~', ansible_facts.user_dir) }}"
+    state: absent
+  loop: "{{ _smb_mount_results.results | default([]) }}"
+  when: item.failed | default(false)
+  loop_control:
+    label: "{{ item.item.name }}"
   tags: smb

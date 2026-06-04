@@ -15,9 +15,15 @@
   tags: always
 
 - name: "DNF | Full system update"
-  become: true
-  ansible.builtin.dnf:
-    name: "*"
-    state: latest
-    update_cache: true
+  block:
+    - name: "DNF | Full system update"
+      become: true
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+  rescue:
+    - name: "DNF | Record update failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['System update failed — run manually: sudo dnf upgrade'] }}"
   tags: always

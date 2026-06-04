@@ -7,108 +7,163 @@
 # =============================================================================
 
 # ── Dark theme RPM ────────────────────────────────────────────────────────────
-- name: "GNOME | Install adw-gtk3 dark theme"
-  become: true
-  ansible.builtin.dnf:
-    name: adw-gtk3-theme
-    state: present
+- block:
+    - name: "GNOME | Install adw-gtk3 dark theme"
+      become: true
+      ansible.builtin.dnf:
+        name: adw-gtk3-theme
+        state: present
+  rescue:
+    - name: "GNOME | Record adw-gtk3 install failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: adw-gtk3-theme install failed — dark theme may not apply'] }}"
   tags: gnome
 
 # ── Dash-to-Dock extension ────────────────────────────────────────────────────
-- name: "GNOME | Install Dash-to-Dock GNOME shell extension"
-  become: true
-  ansible.builtin.dnf:
-    name: gnome-shell-extension-dash-to-dock
-    state: present
+- block:
+    - name: "GNOME | Install Dash-to-Dock GNOME shell extension"
+      become: true
+      ansible.builtin.dnf:
+        name: gnome-shell-extension-dash-to-dock
+        state: present
+  rescue:
+    - name: "GNOME | Record Dash-to-Dock install failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: Dash-to-Dock extension install failed'] }}"
   tags: gnome
 
 # ── Extension Manager Flatpak ─────────────────────────────────────────────────
-- name: "GNOME | Install Extension Manager Flatpak"
-  community.general.flatpak:
-    name: com.mattjakeman.ExtensionManager
-    state: present
-    method: system
-    remote: flathub
+- block:
+    - name: "GNOME | Install Extension Manager Flatpak"
+      community.general.flatpak:
+        name: com.mattjakeman.ExtensionManager
+        state: present
+        method: system
+        remote: flathub
+  rescue:
+    - name: "GNOME | Record Extension Manager install failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: Extension Manager Flatpak install failed'] }}"
   tags: gnome
 
 # ── Apply dconf settings ──────────────────────────────────────────────────────
-- name: "GNOME | Apply interface settings"
-  community.general.dconf:
-    key: "{{ item.key }}"
-    value: "{{ item.value }}"
-    state: present
-  loop: "{{ gnome_interface_settings }}"
+- block:
+    - name: "GNOME | Apply interface settings"
+      community.general.dconf:
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+      loop: "{{ gnome_interface_settings }}"
+  rescue:
+    - name: "GNOME | Record interface settings failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: interface dconf settings failed — check vars/gnome.yml'] }}"
   tags: gnome
 
-- name: "GNOME | Apply window manager settings"
-  community.general.dconf:
-    key: "{{ item.key }}"
-    value: "{{ item.value }}"
-    state: present
-  loop: "{{ gnome_wm_settings }}"
+- block:
+    - name: "GNOME | Apply window manager settings"
+      community.general.dconf:
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+      loop: "{{ gnome_wm_settings }}"
+  rescue:
+    - name: "GNOME | Record window manager settings failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: window manager dconf settings failed — check vars/gnome.yml'] }}"
   tags: gnome
 
-- name: "GNOME | Apply privacy settings"
-  community.general.dconf:
-    key: "{{ item.key }}"
-    value: "{{ item.value }}"
-    state: present
-  loop: "{{ gnome_privacy_settings }}"
+- block:
+    - name: "GNOME | Apply privacy settings"
+      community.general.dconf:
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+      loop: "{{ gnome_privacy_settings }}"
+  rescue:
+    - name: "GNOME | Record privacy settings failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: privacy dconf settings failed — check vars/gnome.yml'] }}"
   tags: gnome
 
-- name: "GNOME | Apply power settings"
-  community.general.dconf:
-    key: "{{ item.key }}"
-    value: "{{ item.value }}"
-    state: present
-  loop: "{{ gnome_power_settings }}"
+- block:
+    - name: "GNOME | Apply power settings"
+      community.general.dconf:
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+      loop: "{{ gnome_power_settings }}"
+  rescue:
+    - name: "GNOME | Record power settings failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: power dconf settings failed — check vars/gnome.yml'] }}"
   tags: gnome
 
-- name: "GNOME | Apply Night Light settings"
-  community.general.dconf:
-    key: "{{ item.key }}"
-    value: "{{ item.value }}"
-    state: present
-  loop: "{{ gnome_night_light_settings }}"
+- block:
+    - name: "GNOME | Apply Night Light settings"
+      community.general.dconf:
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+      loop: "{{ gnome_night_light_settings }}"
+  rescue:
+    - name: "GNOME | Record Night Light settings failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: Night Light dconf settings failed — check vars/gnome.yml'] }}"
   tags: gnome
 
-- name: "GNOME | Apply Nautilus file manager settings"
-  community.general.dconf:
-    key: "{{ item.key }}"
-    value: "{{ item.value }}"
-    state: present
-  loop: "{{ gnome_nautilus_settings }}"
+- block:
+    - name: "GNOME | Apply Nautilus file manager settings"
+      community.general.dconf:
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+      loop: "{{ gnome_nautilus_settings }}"
+  rescue:
+    - name: "GNOME | Record Nautilus settings failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: Nautilus dconf settings failed — check vars/gnome.yml'] }}"
   tags: gnome
 
 # ── Enable extensions ─────────────────────────────────────────────────────────
-# Read the current list first so we only ADD our extensions rather than
-# replacing whatever the user has installed via Extension Manager.
-- name: "GNOME | Read currently enabled extensions"
-  ansible.builtin.command:
-    cmd: dconf read /org/gnome/shell/enabled-extensions
-  register: gnome_current_extensions_raw
-  changed_when: false
-  tags: gnome
+- block:
+    - name: "GNOME | Read currently enabled extensions"
+      ansible.builtin.command:
+        cmd: dconf read /org/gnome/shell/enabled-extensions
+      register: gnome_current_extensions_raw
+      changed_when: false
 
-- name: "GNOME | Enable listed shell extensions (additive)"
-  community.general.dconf:
-    key: "/org/gnome/shell/enabled-extensions"
-    value: >-
-      {{
-        (
-          (gnome_current_extensions_raw.stdout | default('[]')
-            | regex_replace("'", '"') | from_json)
-          + gnome_enabled_extensions
-        ) | unique | to_json | regex_replace('"', "'")
-      }}
-    state: present
+    - name: "GNOME | Enable listed shell extensions (additive)"
+      community.general.dconf:
+        key: "/org/gnome/shell/enabled-extensions"
+        value: >-
+          {{
+            (
+              (gnome_current_extensions_raw.stdout
+                | regex_replace('@as \\[\\]', '[]')
+                | default('[]', true)
+                | regex_replace("'", '"')
+                | from_json)
+              + gnome_enabled_extensions
+            ) | unique | to_json | regex_replace('"', "'")
+          }}
+        state: present
+  rescue:
+    - name: "GNOME | Record extension enable failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: enabling shell extensions failed — check vars/gnome.yml gnome_enabled_extensions'] }}"
   tags: gnome
 
 # ── Dash-to-Dock configuration ────────────────────────────────────────────────
-- name: "GNOME | Configure Dash-to-Dock settings"
-  community.general.dconf:
-    key: "{{ item.key }}"
-    value: "{{ item.value }}"
-    state: present
-  loop: "{{ gnome_dash_to_dock_settings }}"
+- block:
+    - name: "GNOME | Configure Dash-to-Dock settings"
+      community.general.dconf:
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+      loop: "{{ gnome_dash_to_dock_settings }}"
+  rescue:
+    - name: "GNOME | Record Dash-to-Dock settings failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: Dash-to-Dock dconf settings failed — check vars/gnome.yml'] }}"
   tags: gnome

@@ -8,39 +8,40 @@
 # HTTPS passwords are stored securely and never re-prompted.
 # =============================================================================
 
-- name: "Git | Set user name"
-  community.general.git_config:
-    name: user.name
-    value: "{{ git_user_name }}"
-    scope: global
-  when: git_user_name is defined and git_user_name | length > 0
-  tags: git-config
+- block:
+    - name: "Git | Set user name"
+      community.general.git_config:
+        name: user.name
+        value: "{{ git_user_name }}"
+        scope: global
+      when: git_user_name is defined and git_user_name | length > 0
 
-- name: "Git | Set user email"
-  community.general.git_config:
-    name: user.email
-    value: "{{ git_user_email }}"
-    scope: global
-  when: git_user_email is defined and git_user_email | length > 0
-  tags: git-config
+    - name: "Git | Set user email"
+      community.general.git_config:
+        name: user.email
+        value: "{{ git_user_email }}"
+        scope: global
+      when: git_user_email is defined and git_user_email | length > 0
 
-- name: "Git | Set default branch name"
-  community.general.git_config:
-    name: init.defaultBranch
-    value: main
-    scope: global
-  tags: git-config
+    - name: "Git | Set default branch name"
+      community.general.git_config:
+        name: init.defaultBranch
+        value: main
+        scope: global
 
-- name: "Git | Disable rebase on pull"
-  community.general.git_config:
-    name: pull.rebase
-    value: "false"
-    scope: global
-  tags: git-config
+    - name: "Git | Disable rebase on pull"
+      community.general.git_config:
+        name: pull.rebase
+        value: "false"
+        scope: global
 
-- name: "Git | Set GNOME Keyring credential helper"
-  community.general.git_config:
-    name: credential.helper
-    value: /usr/libexec/git-core/git-credential-libsecret
-    scope: global
+    - name: "Git | Set GNOME Keyring credential helper"
+      community.general.git_config:
+        name: credential.helper
+        value: /usr/libexec/git-core/git-credential-libsecret
+        scope: global
+  rescue:
+    - name: "Git | Record configuration failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['Git global configuration failed — run: git config --global to set manually'] }}"
   tags: git-config

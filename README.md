@@ -195,15 +195,17 @@ category, leave `flatpak: []`. To skip RPMs, leave `rpm: []`.
 **`vars/smb.yml`** — non-secret share config (server, mount point, options, which credential file to use).  
 **`vars/secrets.yml`** — vault-encrypted credentials (username/password per credential key).
 
-The `cred_key` in `smb.yml` links each share to its credentials in `secrets.yml`:
+The `cred_key` in `smb.yml` links each share to its credentials in `secrets.yml`.
+`mount_point` accepts either an absolute path or a `~/…` path (expanded to `$HOME` at run time):
 
 ```yaml
 # vars/smb.yml
 smb_shares:
   - name: "Media"
     src: "//192.168.1.100/Media"
-    mount_point: "/mnt/nas/Media"
-    cred_key: nas_primary          # ← matches key in secrets.yml
+    mount_point: "~/Mounts/Media"        # ~/... expanded to $HOME/... at run time
+    # mount_point: "/mnt/nas/Media"      # absolute path also accepted
+    cred_key: nas_primary                # ← matches key in secrets.yml
     cred_file: /etc/samba/.creds_nas_primary
     options: "uid=1000,gid=1000,vers=3.0,_netdev"
 

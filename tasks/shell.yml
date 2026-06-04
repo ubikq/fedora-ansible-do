@@ -2,38 +2,95 @@
 # =============================================================================
 # tasks/shell.yml — Shell Configuration
 # =============================================================================
-# Installs fish shell and starship prompt (both available in Fedora repos),
-# sets fish as the default shell for the current user, and wires starship
-# into fish config (only if the init line is not already present).
+# fish: installed from Fedora repos, set as default shell, Fisher plugin
+#   manager downloaded directly, Tide prompt installed via Fisher.
+# bash: starship prompt installed via atim/starship COPR, wired into .bashrc.
 # =============================================================================
 
-- name: "Shell | Install fish and starship"
-  become: true
-  ansible.builtin.dnf:
-    name:
-      - fish
-      - starship
-    state: present
+# ── fish + Fisher + Tide ──────────────────────────────────────────────────────
+- block:
+    - name: "Shell | Install fish"
+      become: true
+      ansible.builtin.dnf:
+        name: fish
+        state: present
+
+    - name: "Shell | Set fish as default shell"
+      become: true
+      ansible.builtin.user:
+        name: "{{ ansible_facts.user_id }}"
+        shell: /usr/bin/fish
+
+    - name: "Shell | Ensure fish functions directory exists"
+      ansible.builtin.file:
+        path: "{{ ansible_facts.user_dir }}/.config/fish/functions"
+        state: directory
+        mode: '0755'
+
+    - name: "Shell | Install Fisher plugin manager"
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish
+        dest: "{{ ansible_facts.user_dir }}/.config/fish/functions/fisher.fish"
+        mode: '0644'
+
+    - name: "Shell | Check if Tide is already installed"
+      ansible.builtin.command:
+        cmd: grep -qs 'tide' "{{ ansible_facts.user_dir }}/.config/fish/fish_plugins"
+      register: tide_check
+      failed_when: false
+      changed_when: false
+
+    - name: "Shell | Install Tide prompt via Fisher"
+      ansible.builtin.command:
+        cmd: fish -c "fisher install IlanCosman/tide@v6"
+      when: tide_check.rc != 0
+  rescue:
+    - name: "Shell | Record fish / Fisher / Tide setup failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['fish shell setup failed — fish, Fisher, or Tide did not install correctly'] }}"
   tags: shell
 
-- name: "Shell | Set fish as default shell"
-  become: true
-  ansible.builtin.user:
-    name: "{{ ansible_user_id }}"
-    shell: /usr/bin/fish
-  tags: shell
-
-- name: "Shell | Ensure fish config directory exists"
-  ansible.builtin.file:
-    path: "{{ ansible_user_dir }}/.config/fish"
-    state: directory
-    mode: '0755'
-  tags: shell
-
-- name: "Shell | Enable starship in fish config"
+# ── fastfetch on terminal launch ──────────────────────────────────────────────
+- name: "Shell | Run fastfetch on fish terminal launch"
   ansible.builtin.lineinfile:
-    path: "{{ ansible_user_dir }}/.config/fish/config.fish"
-    line: 'starship init fish | source'
+    path: "{{ ansible_facts.user_dir }}/.config/fish/config.fish"
+    line: 'fastfetch'
+    insertbefore: BOF
     create: true
     mode: '0644'
+  tags: shell
+
+- name: "Shell | Run fastfetch on bash terminal launch"
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_facts.user_dir }}/.bashrc"
+    line: 'fastfetch'
+    insertbefore: BOF
+    create: true
+    mode: '0644'
+  tags: shell
+
+# ── starship for bash ─────────────────────────────────────────────────────────
+- block:
+    - name: "Shell | Enable starship COPR repository"
+      become: true
+      ansible.builtin.command:
+        cmd: dnf copr enable -y atim/starship
+        creates: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:atim:starship.repo
+
+    - name: "Shell | Install starship"
+      become: true
+      ansible.builtin.dnf:
+        name: starship
+        state: present
+
+    - name: "Shell | Configure starship in bash"
+      ansible.builtin.lineinfile:
+        path: "{{ ansible_facts.user_dir }}/.bashrc"
+        line: 'eval "$(starship init bash)"'
+        create: true
+        mode: '0644'
+  rescue:
+    - name: "Shell | Record starship setup failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['Starship prompt setup failed — bash prompt will use the default'] }}"
   tags: shell
