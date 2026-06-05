@@ -1,0 +1,6 @@
+---
+# ansible-lint configuration
+# Skipped rules are intentional style choices, not errors.
+
+skip_list:
+  - jinja[spacing]  # extra spaces inside {{ }} used for visual alignment

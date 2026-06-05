@@ -10,30 +10,56 @@
 #   <label>:
 #     no_package_check: false    # set true for non-RPM entries (no rpm -q check)
 #     paths:
-#       - ~/path/to/config/dir   # must be DIRECTORIES — individual files are not
-#       - ~/another/path         # supported; use the parent directory instead
+#       - ~/path/to/config/dir   # directories — contents synced recursively
+#     files:
+#       - ~/path/to/file.conf    # individual files (optional key)
 #
 # Behaviour:
 #   - Package names are validated via rpm -q (unless no_package_check: true).
 #     A warning is added to the report if a package is not installed — this
 #     usually indicates a typo in the label.
-#   - Config paths are checked for existence before syncing. A warning is added
-#     if ALL paths for an entry are missing — this usually indicates a wrong path.
-#   - Individual missing paths are silently skipped (normal for apps not yet
-#     launched or that create config dirs on first use).
+#   - All paths and files are checked for existence before syncing. A warning is
+#     added if ALL entries for a package are missing — this usually indicates a
+#     wrong path.
+#   - Individual missing paths or files are silently skipped (normal for apps not
+#     yet launched or that create config on first use).
 # =============================================================================
 
 rpm_configs:
+
+  # ── Base ──────────────────────────────────────────────────────────────────────
+  
+  # ── Tools ─────────────────────────────────────────────────────────────────────
+  # btrfs-assistant - Manual configuration required
+  
+  # syncthing - Manual configuration required; config restore risks unexpected data sync behaviour
+  
+  doublecmd-qt6:
+    paths:
+      - ~/.config/doublecmd          # Main instance
+      - ~/.config/doublecmd-dev      # Maintain custom tabs for dev work
+    files:
+      - ~/.local/share/applications/doublecmd-qt6.desktop
+      - ~/.local/share/applications/doublecmd-qt6-dev.desktop
+
+  # ── Desktop ───────────────────────────────────────────────────────────────────
+  gnome-tweaks:
+    paths: []
+
+  dconf-editor:
+    paths: []
 
   # ── Development ───────────────────────────────────────────────────────────────
   code:
     paths:
       - ~/.config/Code/User          # settings.json, keybindings.json, snippets/
 
-  # ── System tools ──────────────────────────────────────────────────────────────
-  btrfs-assistant:
-    paths:
-      - ~/.config/btrfs-assistant
+  # ── Productivity ──────────────────────────────────────────────────────────────
+  # (no RPM packages with persistent configuration)
+
+  # ── Communication ─────────────────────────────────────────────────────────────
+  brave-browser:
+    paths: []
 
   # ── Graphics ──────────────────────────────────────────────────────────────────
   gimp:
@@ -54,13 +80,16 @@ rpm_configs:
       - ~/.local/share/darktable     # presets and lua scripts (excludes library.db)
 
   # ── Media ─────────────────────────────────────────────────────────────────────
-  vlc:
-    paths:
-      - ~/.config/vlc                # preferences, playlist, MLV
-
   mpv:
     paths:
       - ~/.config/mpv                # config, input bindings, scripts, shaders
+
+  haruna:
+    paths: []
+
+  vlc:
+    paths:
+      - ~/.config/vlc                # preferences, playlist, MLV
 
   rhythmbox:
     paths:
@@ -69,6 +98,9 @@ rpm_configs:
   HandBrake-gui:
     paths:
       - ~/.config/ghb                # presets and preferences
+
+  # ── Gaming ────────────────────────────────────────────────────────────────────
+  # (no RPM packages with persistent configuration)
 
   # ── Non-RPM entries (no_package_check: true) ──────────────────────────────────
   flatpak-overrides:

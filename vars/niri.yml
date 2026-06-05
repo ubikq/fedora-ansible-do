@@ -8,7 +8,5 @@
 # =============================================================================
 
 # ── Startup programs ──────────────────────────────────────────────────────────
-niri_polkit_agent: /usr/lib/polkit-gnome-authentication-agent-1
-
 # Flatpak app ID used in the syncthingtray startup command
 niri_syncthingtray_flatpak: io.github.martchus.syncthingtray

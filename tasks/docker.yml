@@ -28,7 +28,9 @@
   when: _legacy | select('in', ansible_facts.packages) | list | length > 0
   tags: docker
 
-- block:
+- name: "Docker | Repository and service setup"
+  tags: docker
+  block:
     - name: "Docker | Add Docker CE repository"
       become: true
       ansible.builtin.yum_repository:
@@ -73,4 +75,3 @@
     - name: "Docker | Record setup failure"
       ansible.builtin.set_fact:
         _run_errors: "{{ (_run_errors | default([])) + ['Docker CE setup failed — repo, install, or service issue'] }}"
-  tags: docker

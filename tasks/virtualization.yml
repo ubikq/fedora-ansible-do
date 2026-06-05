@@ -7,7 +7,9 @@
 # to the libvirt and kvm groups (requires logout to take effect).
 # =============================================================================
 
-- block:
+- name: "Virt | KVM, QEMU and libvirt setup"
+  tags: virt
+  block:
     - name: "Virt | Install virtualization group"
       become: true
       ansible.builtin.dnf:
@@ -38,4 +40,3 @@
     - name: "Virt | Record setup failure"
       ansible.builtin.set_fact:
         _run_errors: "{{ (_run_errors | default([])) + ['Virtualization setup failed — KVM/QEMU/libvirt may not be fully configured'] }}"
-  tags: virt

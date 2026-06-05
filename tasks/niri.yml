@@ -43,8 +43,10 @@
   block:
     - name: "Niri | Enable DMS COPR repository"
       become: true
+      vars:
+        _ver: "{{ ansible_facts.distribution_major_version }}"
       ansible.builtin.get_url:
-        url: "https://copr.fedorainfracloud.org/coprs/avengemedia/dms/repo/fedora-{{ ansible_facts.distribution_major_version }}/avengemedia-dms-fedora-{{ ansible_facts.distribution_major_version }}.repo"
+        url: "https://copr.fedorainfracloud.org/coprs/avengemedia/dms/repo/fedora-{{ _ver }}/avengemedia-dms-fedora-{{ _ver }}.repo"
         dest: /etc/yum.repos.d/avengemedia-dms.repo
         mode: '0644'
 
@@ -76,7 +78,6 @@
         path: "{{ ansible_facts.user_dir }}/.config/niri"
         state: directory
         mode: '0755'
-
     - name: "Niri | Deploy config.kdl from template (first run only)"
       ansible.builtin.template:
         src: niri-config.kdl.j2

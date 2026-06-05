@@ -8,7 +8,9 @@
 # =============================================================================
 
 # ── fish + Fisher + Tide ──────────────────────────────────────────────────────
-- block:
+- name: "Shell | fish, Fisher and Tide setup"
+  tags: shell
+  block:
     - name: "Shell | Install fish"
       become: true
       ansible.builtin.dnf:
@@ -44,11 +46,11 @@
       ansible.builtin.command:
         cmd: fish -c "fisher install IlanCosman/tide@v6"
       when: tide_check.rc != 0
+      changed_when: tide_check.rc != 0
   rescue:
     - name: "Shell | Record fish / Fisher / Tide setup failure"
       ansible.builtin.set_fact:
         _run_errors: "{{ (_run_errors | default([])) + ['fish shell setup failed — fish, Fisher, or Tide did not install correctly'] }}"
-  tags: shell
 
 # ── fastfetch on terminal launch ──────────────────────────────────────────────
 - name: "Shell | Run fastfetch on fish terminal launch"
@@ -70,7 +72,9 @@
   tags: shell
 
 # ── starship for bash ─────────────────────────────────────────────────────────
-- block:
+- name: "Shell | Starship prompt setup"
+  tags: shell
+  block:
     - name: "Shell | Enable starship COPR repository"
       become: true
       ansible.builtin.command:
@@ -93,4 +97,3 @@
     - name: "Shell | Record starship setup failure"
       ansible.builtin.set_fact:
         _run_errors: "{{ (_run_errors | default([])) + ['Starship prompt setup failed — bash prompt will use the default'] }}"
-  tags: shell

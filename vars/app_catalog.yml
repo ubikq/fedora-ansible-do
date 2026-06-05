@@ -53,7 +53,8 @@ app_catalog:
     rpm:
       # - rclone # Sync, transfer, and manage files between your local storage and cloud storage providers
       # - timeshift # Use as alternative to btrfs-assistant for more basic functionality. Don't install both
-      - btrfs-assistant
+      # - tmux # Manage, organize, and switch between multiple terminal sessions and programs within a single screen
+      - btrfs-assistant # Intuitive GUI front-end for the command-line Btrfs tools, Snapper, and BtrfsMaintenance
       - eza # Replacement for the traditional Linux ls command for organized, human-readable display
       - bat # Replacement for the traditional Linux cat (concatenate) command with syntax highlghting
       - fzf # Fuzzy Finder is a blazing-fast, general-purpose command-line filter
@@ -68,7 +69,8 @@ app_catalog:
       - cockpit-files # Cockpit client addin to manage files
       - tldr # Community driven alternative to man pages with short, practical, and ready-to-use command examples
       - restic # Command-line backup program - fast, efficient, secure, and verifiably accurate with deduplication capabilities
-      - syncthing # Continuous file synchronization program between workstation and my nas.
+      - syncthing # Continuous file synchronization program between workstation and my nas
+      - doublecmd-qt6 # Dual pane file manager - requires qt6 optimizations to enable dark mode
     flatpak:
       - io.github.kolunmi.Bazaar # Flatpak app store and manager
       - io.github.flattool.Warehouse # Manage flatpaks including version control
@@ -77,7 +79,6 @@ app_catalog:
       - com.ranfdev.DistroShelf # Graphical interface for managing Distrobox containers
       - io.github.cboxdoerfer.FSearch # Graphical file search application - closest alternative to everything search on windows
       - io.github.martchus.syncthingtray # System tray status and informatin for syncthing
-      - doublecmd-qt6 # Dual pane file manager - requires qt6 optimizations to enable dark mode
       - org.kde.dolphin #  KDE's file manager - more capable and feature rich than the Gnome default
       - org.kde.filelight # Visualize disk usage to make cleanup easier.
       - org.kde.kwrite # Text editor with syntax highlighting and auto-indentation (Basically kate without the extra features)

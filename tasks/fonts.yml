@@ -33,7 +33,7 @@
     label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: fonts
 
-- name: "Fonts | Rebuild font cache"
+- name: "Fonts | Rebuild font cache"  # noqa: no-handler
   ansible.builtin.command: fc-cache --force
   changed_when: false
   when: _fonts_result.changed | default(false)

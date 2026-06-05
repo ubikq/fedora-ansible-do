@@ -8,7 +8,9 @@
 # HTTPS passwords are stored securely and never re-prompted.
 # =============================================================================
 
-- block:
+- name: "Git | Configure global settings"
+  tags: git-config
+  block:
     - name: "Git | Set user name"
       community.general.git_config:
         name: user.name
@@ -44,4 +46,3 @@
     - name: "Git | Record configuration failure"
       ansible.builtin.set_fact:
         _run_errors: "{{ (_run_errors | default([])) + ['Git global configuration failed — run: git config --global to set manually'] }}"
-  tags: git-config

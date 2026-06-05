@@ -18,7 +18,7 @@ This Ansible playbook automates the post-install configuration of Fedora Worksta
 
 - **Configuration Backup & Restore**: Backs up and restores application configuration to and from a network share, covering both Flatpak and RPM-installed applications. Maintains dated archives, a rolling latest snapshot, and optional monthly snapshots with configurable retention. See the [Backup & Restore](#backup--restore) section for details.
 
-- **Niri Compositor & DankMaterialShell** (opt-in, `--tags niri`): Installs the niri scrolling tiling Wayland compositor alongside the DankMaterialShell desktop shell. A default `config.kdl` is deployed on first run as a ready-to-use starting point for customization. Once personalized, the configuration can be backed up and restored across fresh installations using the playbook's built-in backup system.
+- **Niri Compositor & DankMaterialShell** (opt-in, `--tags niri`): Installs the niri scrolling tiling Wayland compositor alongside the DankMaterialShell desktop shell. A default `config.kdl` with customized keybindings is deployed on first run as a ready-to-use starting point for customization. Once personalized, the configuration can be backed up and restored across fresh installations using the playbook's built-in backup system.
 
 ### Feature Roadmap
 
@@ -326,13 +326,18 @@ rpm_configs:
     paths:
       - ~/.config/darktable
       - ~/.local/share/darktable
+  doublecmd-qt6:
+    paths:
+      - ~/.config/doublecmd
+    files:
+      - ~/.local/share/applications/doublecmd.desktop   # individual file
   flatpak-overrides:
     no_package_check: true         # skip rpm -q validation for non-RPM entries
     paths:
       - ~/.local/share/flatpak/overrides
 ```
 
-Paths must be **directories** (not individual files). Missing paths are silently skipped. A warning is added to the report if a package is not installed or if all paths for an entry are absent.
+Use `paths:` for directories and `files:` for individual files (`files:` is optional). Missing entries are silently skipped. A warning is added to the report if a package is not installed or if all entries for a package are absent.
 
 ### Backup
 

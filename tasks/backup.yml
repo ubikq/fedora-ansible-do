@@ -497,7 +497,7 @@
         state: directory
         mode: '0755'
 
-    - name: "RPM Backup | Validate package names"
+    - name: "RPM Backup | Validate package names"  # noqa: command-instead-of-module
       ansible.builtin.command:
         cmd: "rpm -q {{ item.key }}"
       loop: "{{ rpm_configs | dict2items }}"
@@ -527,6 +527,15 @@
       register: _rb_path_stats
       failed_when: false
 
+    - name: "RPM Backup | Stat individual config files"
+      ansible.builtin.stat:
+        path: "{{ item.1 | replace('~', ansible_facts.user_dir) }}"
+      loop: "{{ rpm_configs | dict2items | subelements('value.files', skip_missing=True) }}"
+      loop_control:
+        label: "{{ item.0.key }}: {{ item.1 }}"
+      register: _rb_file_stats
+      failed_when: false
+
     - name: "RPM Backup | Build list of existing config paths"
       ansible.builtin.set_fact:
         _rb_existing_paths: >-
@@ -535,10 +544,22 @@
              | map(attribute='item')
              | list }}
 
+    - name: "RPM Backup | Build list of existing config files"
+      ansible.builtin.set_fact:
+        _rb_existing_files: >-
+          {{ _rb_file_stats.results | default([])
+             | selectattr('stat.exists', 'equalto', true)
+             | map(attribute='item')
+             | list }}
+
     - name: "RPM Backup | Build set of packages with at least one existing path"
       ansible.builtin.set_fact:
         _rb_packages_with_config: >-
-          {{ _rb_existing_paths | map('first') | map(attribute='key') | unique | list }}
+          {{ (_rb_existing_paths + _rb_existing_files)
+             | map('first')
+             | map(attribute='key')
+             | unique
+             | list }}
 
     - name: "RPM Backup | Record warnings for entries with no config found"
       ansible.builtin.set_fact:
@@ -559,7 +580,7 @@
              | dirname }}
         state: directory
         mode: '0755'
-      loop: "{{ _rb_existing_paths }}"
+      loop: "{{ _rb_existing_paths + _rb_existing_files }}"
       loop_control:
         label: "{{ item.0.key }}: {{ item.1 }}"
 
@@ -578,16 +599,32 @@
       register: _rb_sync_results
       failed_when: false
 
+    - name: "RPM Backup | Sync individual config files to staging"
+      ansible.posix.synchronize:
+        src: "{{ item.1 | replace('~', ansible_facts.user_dir) }}"
+        dest: >-
+          {{ _rb_tmp_dir }}/configs/{{ item.0.key }}/{{ item.1
+             | replace('~/', '')
+             | replace('~', '')
+             | dirname }}/
+        recursive: false
+      loop: "{{ _rb_existing_files }}"
+      loop_control:
+        label: "{{ item.0.key }}: {{ item.1 }}"
+      register: _rb_file_sync_results
+      failed_when: false
+
     - name: "RPM Backup | Track sync failures"
       ansible.builtin.set_fact:
         _run_errors: >-
           {{ _run_errors
              + (['RPM backup: sync failed for ' + item.item.0.key + ': ' + item.item.1]
                 if (item.rc | default(0)) != 0 else []) }}
-      loop: "{{ _rb_sync_results.results | default([]) }}"
+      loop: "{{ (_rb_sync_results.results | default([]))
+                + (_rb_file_sync_results.results | default([])) }}"
       loop_control:
         label: "{{ item.item.0.key }}: {{ item.item.1 }}"
-      when: _rb_existing_paths | length > 0
+      when: (_rb_existing_paths + _rb_existing_files) | length > 0
 
     - name: "RPM Backup | Compress to dated archive"
       community.general.archive:
@@ -778,10 +815,30 @@
       register: _rr_staged_stats
       failed_when: false
 
+    - name: "RPM Restore | Stat individual config files in staging"
+      ansible.builtin.stat:
+        path: >-
+          {{ _rr_tmp_dir }}/configs/{{ item.0.key }}/{{ item.1
+             | replace('~/', '')
+             | replace('~', '') }}
+      loop: "{{ rpm_configs | dict2items | subelements('value.files', skip_missing=True) }}"
+      loop_control:
+        label: "{{ item.0.key }}: {{ item.1 }}"
+      register: _rr_staged_file_stats
+      failed_when: false
+
     - name: "RPM Restore | Build list of paths present in archive"
       ansible.builtin.set_fact:
         _rr_paths_to_restore: >-
           {{ _rr_staged_stats.results
+             | selectattr('stat.exists', 'equalto', true)
+             | map(attribute='item')
+             | list }}
+
+    - name: "RPM Restore | Build list of files present in archive"
+      ansible.builtin.set_fact:
+        _rr_files_to_restore: >-
+          {{ _rr_staged_file_stats.results | default([])
              | selectattr('stat.exists', 'equalto', true)
              | map(attribute='item')
              | list }}
@@ -791,7 +848,7 @@
         path: "{{ item.1 | replace('~', ansible_facts.user_dir) | dirname }}"
         state: directory
         mode: '0755'
-      loop: "{{ _rr_paths_to_restore }}"
+      loop: "{{ _rr_paths_to_restore + _rr_files_to_restore }}"
       loop_control:
         label: "{{ item.0.key }}: {{ item.1 }}"
 
@@ -810,16 +867,31 @@
       register: _rr_sync_results
       failed_when: false
 
+    - name: "RPM Restore | Sync individual config files from staging to home"
+      ansible.posix.synchronize:
+        src: >-
+          {{ _rr_tmp_dir }}/configs/{{ item.0.key }}/{{ item.1
+             | replace('~/', '')
+             | replace('~', '') }}
+        dest: "{{ item.1 | replace('~', ansible_facts.user_dir) | dirname }}/"
+        recursive: false
+      loop: "{{ _rr_files_to_restore }}"
+      loop_control:
+        label: "{{ item.0.key }}: {{ item.1 }}"
+      register: _rr_file_sync_results
+      failed_when: false
+
     - name: "RPM Restore | Track sync failures"
       ansible.builtin.set_fact:
         _run_errors: >-
           {{ _run_errors
              + (['RPM restore: sync failed for ' + item.item.0.key + ': ' + item.item.1]
                 if (item.rc | default(0)) != 0 else []) }}
-      loop: "{{ _rr_sync_results.results | default([]) }}"
+      loop: "{{ (_rr_sync_results.results | default([]))
+                + (_rr_file_sync_results.results | default([])) }}"
       loop_control:
         label: "{{ item.item.0.key }}: {{ item.item.1 }}"
-      when: _rr_paths_to_restore | length > 0
+      when: (_rr_paths_to_restore + _rr_files_to_restore) | length > 0
 
     - name: "RPM Restore | Clean staging directory"
       ansible.builtin.file:
