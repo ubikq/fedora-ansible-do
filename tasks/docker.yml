@@ -71,6 +71,12 @@
         name: "{{ ansible_facts.user_id }}"
         groups: docker
         append: true
+      register: _docker_group_result
+
+    - name: "Docker | Record reboot requirement"
+      ansible.builtin.set_fact:
+        _reboot_reasons: "{{ _reboot_reasons + ['Docker group membership — run: newgrp docker  (or log out)'] }}"
+      when: _docker_group_result is changed
   rescue:
     - name: "Docker | Record setup failure"
       ansible.builtin.set_fact:

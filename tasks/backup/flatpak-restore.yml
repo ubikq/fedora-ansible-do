@@ -1,0 +1,157 @@
+---
+# =============================================================================
+# tasks/backup/flatpak-restore.yml — Flatpak Configuration Restore
+# =============================================================================
+# Tags: restore, flatpak-restore  (never runs automatically)
+# =============================================================================
+
+- name: "Flatpak Restore | Check SMB credentials are available"
+  ansible.builtin.set_fact:
+    _restore_creds_ok: "{{ smb_credentials is defined }}"
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Record skipped restore — no SMB credentials"
+  ansible.builtin.set_fact:
+    _run_errors: >-
+      {{ _run_errors + ['Flatpak restore skipped — SMB credentials not available.'
+         + ' Create vars/secrets.yml from vars/secrets.yml.template first'] }}
+  when: not _restore_creds_ok
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Resolve SMB mount point"
+  ansible.builtin.set_fact:
+    _restore_check_path: >-
+      {{ smb_shares | default([])
+         | map(attribute='mount_point')
+         | map('replace', '~', ansible_facts.user_dir)
+         | select('in', flatpak_backup_base_dir)
+         | sort(reverse=true)
+         | list
+         | first
+         | default(flatpak_backup_base_dir | dirname) }}
+  when: _restore_creds_ok
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Stat mount point"
+  ansible.builtin.stat:
+    path: "{{ _restore_check_path }}"
+  register: _restore_share_stat
+  when: _restore_creds_ok
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Stat home directory"
+  ansible.builtin.stat:
+    path: "{{ ansible_facts.user_dir }}"
+  register: _restore_home_stat
+  when: _restore_creds_ok
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Check share is mounted"
+  ansible.builtin.set_fact:
+    _restore_mount_ok: >-
+      {{ _restore_share_stat.stat.exists | default(false)
+         and _restore_share_stat.stat.dev != _restore_home_stat.stat.dev }}
+  when: _restore_creds_ok
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Record skipped restore — share not mounted"
+  ansible.builtin.set_fact:
+    _run_errors: >-
+      {{ _run_errors + ['Flatpak restore skipped — backup share not mounted at '
+         + flatpak_backup_base_dir + '. Check NAS connectivity and SMB credentials'] }}
+  when: _restore_creds_ok and not (_restore_mount_ok | default(false))
+  tags: [never, restore, flatpak-restore]
+
+- name: "Flatpak Restore | Run"
+  tags: [never, restore, flatpak-restore]
+  when: (_restore_creds_ok | default(false)) and (_restore_mount_ok | default(false))
+  block:
+    - name: "Flatpak Restore | Set run variables"
+      ansible.builtin.set_fact:
+        _fr_flatpaks: >-
+          {{ app_catalog.values()
+             | map(attribute='flatpak')
+             | select
+             | flatten
+             | list }}
+        _fr_base_dir: "{{ flatpak_backup_base_dir }}"
+        _fr_tmp_dir: "{{ flatpak_backup_tmp_dir }}"
+
+    - name: "Flatpak Restore | Prepare staging directory"
+      ansible.builtin.file:
+        path: "{{ _fr_tmp_dir }}"
+        state: "{{ item }}"
+        mode: '0700'
+      loop: [absent, directory]
+
+    - name: "Flatpak Restore | Extract latest archive to staging"
+      ansible.builtin.unarchive:
+        src: "{{ _fr_base_dir }}/flatpak_backup_latest.tar.gz"
+        dest: "{{ _fr_tmp_dir }}"
+        remote_src: true
+
+    - name: "Flatpak Restore | Find apps present in archive"
+      ansible.builtin.find:
+        paths: "{{ _fr_tmp_dir }}/app"
+        file_type: directory
+        recurse: false
+      register: _fr_staged_dirs
+      failed_when: false
+
+    - name: "Flatpak Restore | Filter to apps present in archive"
+      ansible.builtin.set_fact:
+        _fr_apps_to_restore: >-
+          {{ _fr_flatpaks
+             | select('in', _fr_staged_dirs.files | default([])
+                            | map(attribute='path')
+                            | map('basename')
+                            | list)
+             | list }}
+
+    - name: "Flatpak Restore | Ensure ~/.var/app exists"
+      ansible.builtin.file:
+        path: "{{ ansible_facts.user_dir }}/.var/app"
+        state: directory
+        mode: '0700'
+
+    - name: "Flatpak Restore | Sync configs from staging to ~/.var/app"
+      ansible.posix.synchronize:
+        src: "{{ _fr_tmp_dir }}/app/{{ item }}/"
+        dest: "{{ ansible_facts.user_dir }}/.var/app/{{ item }}/"
+        recursive: true
+        delete: true
+      loop: "{{ _fr_apps_to_restore }}"
+      loop_control:
+        label: "{{ item }}"
+      register: _fr_sync_results
+      failed_when: false
+
+    - name: "Flatpak Restore | Track sync failures"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{ _run_errors
+             + (['Flatpak restore: sync failed for ' + item.item]
+                if (item.rc | default(0)) != 0 else []) }}
+      loop: "{{ _fr_sync_results.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: _fr_apps_to_restore | length > 0
+
+    - name: "Flatpak Restore | Clean staging directory"
+      ansible.builtin.file:
+        path: "{{ _fr_tmp_dir }}"
+        state: absent
+
+    - name: "Flatpak Restore | Record success"
+      ansible.builtin.set_fact:
+        _backup_results: >-
+          {{ _backup_results
+             + ['Flatpak restore completed from flatpak_backup_latest.tar.gz'] }}
+
+  rescue:
+    - name: "Flatpak Restore | Record failure"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{ (_run_errors | default([])) + ['Flatpak restore failed'
+             + ' — check flatpak_backup_latest.tar.gz exists at '
+             + flatpak_backup_base_dir] }}

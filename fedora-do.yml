@@ -24,7 +24,7 @@
 # Available tags:
 #   always | all-apps | desktop | tools | graphics | media | development |
 #   productivity | communication | gaming | docker | virt | smb | gnome |
-#   firmware | fonts | shell | git-config |
+#   firmware | fonts | shell | git-config | cleanup |
 #   backup | restore | flatpak-backup | flatpak-restore | rpm-backup | rpm-restore |
 #   niri  (never runs by default — opt-in: --tags niri)
 # =============================================================================
@@ -92,6 +92,7 @@
         _changed_rpms:     []
         _changed_flatpaks: []
         _backup_results:   []
+        _reboot_reasons:   []
       tags: always
 
     - name: "Pre | Test sudo (become) access"
@@ -203,12 +204,12 @@
             {{ esc }}[31m✖  {{ err }}{{ esc }}[0m
           {% endfor %}
           {% endif %}
+          {% if _reboot_reasons | length > 0 %}
           [REQUIRES LOGOUT OR REBOOT]
-            • Docker group membership    →  newgrp docker  (or log out)
-            • libvirt/kvm group          →  log out and back in
-            • Default shell change       →  log out and back in
-            • GNOME extensions           →  log out and back in
-            • SMB _netdev mounts         →  reboot to verify automount
+          {% for reason in _reboot_reasons %}
+            • {{ reason }}
+          {% endfor %}
+          {% endif %}
           ════════════════════════════════════════════════════════════════
       tags: always
       block:

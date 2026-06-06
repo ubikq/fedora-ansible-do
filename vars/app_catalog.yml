@@ -46,6 +46,7 @@ app_catalog:
       - htop
       - p7zip
       - p7zip-plugins
+      - rsync                     # Required by backup/restore tasks
     flatpak: []
 
   # ── System tools, utilities & virtualization ───────────────────────────────

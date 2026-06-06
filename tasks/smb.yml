@@ -104,3 +104,8 @@
       when: item.failed | default(false)
       loop_control:
         label: "{{ item.item.name }}"
+
+    - name: "SMB | Record reboot requirement"
+      ansible.builtin.set_fact:
+        _reboot_reasons: "{{ _reboot_reasons + ['SMB _netdev mounts configured — reboot to verify automount'] }}"
+      when: _smb_mount_results.results | selectattr('changed', 'true') | list | length > 0

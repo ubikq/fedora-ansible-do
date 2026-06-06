@@ -69,7 +69,39 @@
             ['Niri: DankMaterialShell install failed — enable COPR avengemedia/dms and install dms manually']
           }}
 
+# ── DMS configuration ─────────────────────────────────────────────────────────
+- name: "Niri | Deploy DMS settings.json"
+  tags: [never, niri]
+  block:
+    - name: "Niri | Ensure DankMaterialShell config directory exists"
+      ansible.builtin.file:
+        path: "{{ ansible_facts.user_dir }}/.config/DankMaterialShell"
+        state: directory
+        mode: '0755'
+    - name: "Niri | Deploy DMS settings.json from template (first run only)"
+      ansible.builtin.template:
+        src: dms-settings.json.j2
+        dest: "{{ ansible_facts.user_dir }}/.config/DankMaterialShell/settings.json"
+        mode: '0644'
+        force: false
+  rescue:
+    - name: "Niri | Record DMS settings deploy failure"
+      ansible.builtin.set_fact:
+        _run_errors: >-
+          {{
+            (_run_errors | default([])) +
+            ['Niri: DMS settings.json deployment failed — check templates/dms-settings.json.j2']
+          }}
+
 # ── niri configuration ────────────────────────────────────────────────────────
+- name: "Niri | Check if syncthingtray flatpak is installed"
+  tags: [never, niri]
+  ansible.builtin.command:
+    cmd: "flatpak info {{ niri_syncthingtray_flatpak }}"
+  register: _niri_syncthingtray_check
+  changed_when: false
+  failed_when: false
+
 - name: "Niri | Deploy config.kdl"
   tags: [never, niri]
   block:

@@ -159,6 +159,12 @@
             ) | unique | to_json | regex_replace('"', "'")
           }}
         state: present
+      register: _gnome_ext_result
+
+    - name: "GNOME | Record reboot requirement"
+      ansible.builtin.set_fact:
+        _reboot_reasons: "{{ _reboot_reasons + ['GNOME extensions changed — log out and back in'] }}"
+      when: _gnome_ext_result is changed
   rescue:
     - name: "GNOME | Record extension enable failure"
       ansible.builtin.set_fact:

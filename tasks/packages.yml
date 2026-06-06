@@ -48,6 +48,15 @@
     label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: tools
 
+- name: "Packages [tools] | Enable syncthing user service"
+  ansible.builtin.systemd:
+    name: syncthing
+    enabled: true
+    scope: user
+  when: "'syncthing' in (app_catalog.tools.rpm | default([]))"
+  failed_when: false
+  tags: tools
+
 # ── Desktop ───────────────────────────────────────────────────────────────────
 - name: "Packages [desktop] | Install RPM packages"
   become: true

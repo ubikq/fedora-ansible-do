@@ -48,7 +48,7 @@ This playbook automatically enables the [RPM Fusion](https://rpmfusion.org) repo
 ## Project Structure
 
 ```
-fedora-setup/
+fedora-ansible-do/
 ├── fedora-do.yml                    ← Master playbook — run this
 ├── .gitignore
 │
@@ -113,37 +113,44 @@ ansible-playbook fedora-do.yml -K -J
 | Mode | How | Result |
 |---|---|---|
 | **Full run** | no `--tags` flag | Every task runs |
-| **Specific tasks only** | `--tags foo,bar` | Only tagged tasks run (plus `always`) |
+| **Specific tasks only** | `--tags foo,bar` | Only tagged tasks run (`always` tasks run automatically in all modes) |
 | **Full run, skip something** | `--skip-tags foo` | Everything runs except the skipped tag(s) |
 
 ### Tags
 
 | Tag | What it covers |
 |---|---|
-| `always` | DNF tune, update, RPM Fusion, FFmpeg, base packages, Flathub setup, cleanup — runs in all modes |
+| `always` | DNF tune, system update, RPM Fusion, FFmpeg, base packages, Flathub setup — runs in all modes |
 | `all-apps` | Shortcut: installs every app category at once (tools through gaming) |
-| `tools` | btrfs-assistant, restic, bat, eza, fzf, fastfetch + Flatseal, GearLever |
+| `tools` | btrfs-assistant, eza, bat, fzf, fastfetch, tldr, restic, syncthing, doublecmd-qt6, pavucontrol, Cockpit plugins + Bazaar, Warehouse, Flatseal, GearLever, Dolphin, Meld, FSearch, CockpitClient, Solaar |
 | `desktop` | GNOME Tweaks, dconf Editor + PeaZip, Extension Manager |
-| `development` | GCC, Node, Go, Python, VS Code |
-| `productivity` | LibreOffice, Obsidian |
-| `communication` | Signal, Discord |
-| `graphics` | Krita, GIMP, Inkscape, Darktable, OBS Studio |
-| `media` | mpv + Haruna, HandBrake, VLC, Kdenlive |
-| `gaming` | Steam, Lutris, RetroArch |
+| `development` | VS Code (RPM, via Microsoft repo) |
+| `productivity` | LibreOffice, TickTick, Bitwarden, Obsidian, Logseq, Actual Budget, Foliate, Okular |
+| `communication` | Brave Browser (RPM, for PWA support), Vivaldi, Floorp, Chrome |
+| `graphics` | nomacs, Krita, FreeCAD |
+| `media` | mpv, Haruna (RPM), Jellyfin Desktop, HandBrake, yt-dlp |
+| `gaming` | *(no active apps — category reserved)* |
 | `docker` | Docker CE, containerd, compose plugin |
 | `virt` | KVM/QEMU, libvirt, virt-manager — full virtualisation stack |
 | `smb` | Credential files, fstab entries, mounts |
 | `gnome` | Dark mode, Dash-to-Dock, Night Light, Nautilus, dconf keys |
 | `firmware` | fwupdmgr metadata refresh + firmware updates |
 | `fonts` | Noto, Roboto, JetBrains Mono, Fira Code, Cascadia Code |
-| `shell` | fish shell (set as default) + starship prompt |
+| `shell` | fish shell (set as default) + Fisher + Tide + starship prompt |
 | `git-config` | Git identity, default branch, GNOME Keyring credential helper |
+| `cleanup` | dnf autoremove, cache clean, Flatpak updates — runs on full run or `--tags cleanup` |
+| `niri` | niri compositor + DankMaterialShell — **never auto-runs**, opt-in only |
 | `backup` | Run both Flatpak and RPM config backup (never runs automatically) |
 | `restore` | Run both Flatpak and RPM config restore (never runs automatically) |
 | `flatpak-backup` | Flatpak config backup only (`~/.var/app` → SMB share) |
 | `flatpak-restore` | Flatpak config restore only (SMB share → `~/.var/app`) |
 | `rpm-backup` | RPM app config backup only (paths from `vars/rpm_configs.yml` → SMB share) |
 | `rpm-restore` | RPM app config restore only (SMB share → home paths per `vars/rpm_configs.yml`) |
+
+> **Tip:** To see all available tags without running the playbook:
+> ```bash
+> ansible-playbook fedora-do.yml --list-tags
+> ```
 
 ### Examples
 
@@ -160,7 +167,7 @@ ansible-playbook fedora-do.yml -K -J
 ansible-playbook fedora-do.yml -K --tags "tools,media"
 
 # Only app categories (all of them, shortcut tag)
-ansible-playbook fedora-do.yml -K --tags "always,all-apps"
+ansible-playbook fedora-do.yml -K --tags all-apps
 
 # Refresh GNOME settings only
 ansible-playbook fedora-do.yml -K --tags gnome
@@ -350,7 +357,7 @@ ansible-playbook fedora-do.yml -K -J --tags flatpak-backup
 ansible-playbook fedora-do.yml -K -J --tags rpm-backup
 ```
 
-Each backup creates a dated archive and a `*_latest.tar.gz` on the share. Old archives are pruned per `vars/backup.yml`. Requires `rsync` (included in the `tools` tag).
+Each backup creates a dated archive and a `*_latest.tar.gz` on the share. Old archives are pruned per `vars/backup.yml`. Requires `rsync` (installed automatically via the `base` category).
 
 ### Restore
 

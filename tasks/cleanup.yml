@@ -8,7 +8,7 @@
   ansible.builtin.dnf:
     autoremove: true
   failed_when: false
-  tags: always
+  tags: cleanup
 
 - name: "Cleanup | Clear DNF package cache"
   become: true
@@ -17,7 +17,7 @@
   register: dnf_clean_result
   changed_when: "'0 files removed' not in dnf_clean_result.stdout"
   failed_when: false
-  tags: always
+  tags: cleanup
 
 - name: "Cleanup | Update Flatpak apps"
   become: true
@@ -26,4 +26,4 @@
   register: flatpak_update_result
   changed_when: "'app/' in flatpak_update_result.stdout or 'runtime/' in flatpak_update_result.stdout"
   failed_when: false
-  tags: always
+  tags: cleanup

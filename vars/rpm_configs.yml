@@ -28,12 +28,11 @@
 rpm_configs:
 
   # ── Base ──────────────────────────────────────────────────────────────────────
-  
+  # (no RPM packages with persistent configuration)
+
   # ── Tools ─────────────────────────────────────────────────────────────────────
   # btrfs-assistant - Manual configuration required
-  
   # syncthing - Manual configuration required; config restore risks unexpected data sync behaviour
-  
   doublecmd-qt6:
     paths:
       - ~/.config/doublecmd          # Main instance
@@ -43,11 +42,7 @@ rpm_configs:
       - ~/.local/share/applications/doublecmd-qt6-dev.desktop
 
   # ── Desktop ───────────────────────────────────────────────────────────────────
-  gnome-tweaks:
-    paths: []
-
-  dconf-editor:
-    paths: []
+  # (GNOME desktop config backed up under Non-RPM entries below)
 
   # ── Development ───────────────────────────────────────────────────────────────
   code:
@@ -62,22 +57,7 @@ rpm_configs:
     paths: []
 
   # ── Graphics ──────────────────────────────────────────────────────────────────
-  gimp:
-    paths:
-      - ~/.config/GIMP               # preferences, brushes, scripts, palettes
-
-  inkscape:
-    paths:
-      - ~/.config/inkscape           # preferences, templates, palettes
-
-  rawtherapee:
-    paths:
-      - ~/.config/RawTherapee        # preferences and processing profiles
-
-  darktable:
-    paths:
-      - ~/.config/darktable          # preferences and styles
-      - ~/.local/share/darktable     # presets and lua scripts (excludes library.db)
+  # (no RPM packages with persistent configuration)
 
   # ── Media ─────────────────────────────────────────────────────────────────────
   mpv:
@@ -87,23 +67,39 @@ rpm_configs:
   haruna:
     paths: []
 
-  vlc:
-    paths:
-      - ~/.config/vlc                # preferences, playlist, MLV
-
-  rhythmbox:
-    paths:
-      - ~/.local/share/rhythmbox     # library metadata and plugin config
-
-  HandBrake-gui:
-    paths:
-      - ~/.config/ghb                # presets and preferences
-
-  # ── Gaming ────────────────────────────────────────────────────────────────────
+    # ── Gaming ────────────────────────────────────────────────────────────────────
   # (no RPM packages with persistent configuration)
 
   # ── Non-RPM entries (no_package_check: true) ──────────────────────────────────
+  gnome-desktop:
+    no_package_check: true
+    paths:
+      - ~/.config/gtk-3.0                    # GTK3 theme overrides, custom CSS
+      - ~/.config/gtk-4.0                    # GTK4 theme overrides
+      - ~/.config/gnome-session              # Session settings
+      - ~/.local/share/gnome-shell/extensions # Installed GNOME Shell extensions
+      - ~/.themes                            # Custom themes installed per-user
+      - ~/.icons                             # Custom icon sets installed per-user
+      - ~/.local/share/fonts                 # User-installed fonts
+      - ~/.local/share/backgrounds           # Custom wallpapers
+    files:
+      - ~/.config/dconf/dconf-settings.ini   # The dconf database is backed and restored as part of tasks
+      # - ~/.config/dconf/user               # Alternative: raw dconf binary (not human readable)
+
+  fish-shell:
+    no_package_check: true
+    paths:
+      - ~/.config/fish                         # config.fish, functions/, conf.d/, completions/, fish_variables
+    files:
+      - ~/.config/starship.toml                # only backed up if it exists (silently skipped otherwise)
+
   flatpak-overrides:
     no_package_check: true
     paths:
       - ~/.local/share/flatpak/overrides   # per-app permission overrides (set by Flatseal)
+  niri-and-dms:
+    no_package_check: true
+    paths:
+      - ~/.config/DankMaterialShell
+      - ~/.config/niri
+      - ~/.local/state/DankMaterialShell

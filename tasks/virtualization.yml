@@ -36,6 +36,12 @@
         name: "{{ ansible_facts.user_id }}"
         groups: kvm
         append: true
+      register: _virt_group_result
+
+    - name: "Virt | Record reboot requirement"
+      ansible.builtin.set_fact:
+        _reboot_reasons: "{{ _reboot_reasons + ['libvirt/kvm group membership — log out and back in'] }}"
+      when: _virt_group_result is changed
   rescue:
     - name: "Virt | Record setup failure"
       ansible.builtin.set_fact:

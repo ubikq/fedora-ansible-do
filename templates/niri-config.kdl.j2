@@ -21,7 +21,11 @@ spawn-at-startup "dms" "run"
 spawn-at-startup "xwayland-satellite"
 
 // Syncthing tray — delay to allow the DE to settle before starting
+{% if _niri_syncthingtray_check.rc | default(1) == 0 %}
 spawn-sh-at-startup "sleep 10 && flatpak run --branch=stable --arch=x86_64 --command=syncthingtray {{ niri_syncthingtray_flatpak }}"
+{% else %}
+// spawn-sh-at-startup "sleep 10 && flatpak run --branch=stable --arch=x86_64 --command=syncthingtray {{ niri_syncthingtray_flatpak }}"
+{% endif %}
 
 // ── Input ─────────────────────────────────────────────────────────────────────
 // Input device configuration.
@@ -251,8 +255,8 @@ binds {
     Mod+Shift+E { quit; }
     Mod+T hotkey-overlay-title="Open Terminal" { spawn "alacritty"; }
     Super+B hotkey-overlay-title="Open Browser: firefox" { spawn "firefox"; }
-    Super+D hotkey-overlay-title="Double Commander" { spawn "gtk-launch" "doublecmd.desktop"; }
-    Super+E  { spawn "dolphin"; }
+    Super+D hotkey-overlay-title="Double Commander" { spawn "gtk-launch" "doublecmd-qt6.desktop"; }
+    Super+E hotkey-overlay-title="Dolphin file manager" { spawn "Dolphin"; }
     Super+Return hotkey-overlay-title="Open Terminal" { spawn "alacritty"; }
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
     Mod+Shift+Slash { show-hotkey-overlay; }

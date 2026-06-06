@@ -19,3 +19,9 @@
   changed_when: "'Successfully installed' in fwupd_result.stdout"
   failed_when: fwupd_result.rc not in [0, 2]
   tags: firmware
+
+- name: "Firmware | Record reboot requirement"
+  ansible.builtin.set_fact:
+    _reboot_reasons: "{{ _reboot_reasons + ['Firmware update applied — reboot to activate'] }}"
+  when: fwupd_result is changed
+  tags: firmware
