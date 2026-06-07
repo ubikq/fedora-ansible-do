@@ -23,7 +23,7 @@
 #
 # Available tags:
 #   always | all-apps | desktop | tools | graphics | media | development |
-#   productivity | communication | gaming | docker | virt | smb | gnome |
+#   productivity | communication | gaming | docker | virt | nocow | smb | gnome |
 #   firmware | fonts | shell | git-config | cleanup |
 #   backup | restore | flatpak-backup | flatpak-restore | rpm-backup | rpm-restore |
 #   niri  (never runs by default — opt-in: --tags niri)
@@ -68,6 +68,11 @@
         file: vars/rpm_configs.yml
       tags: always
 
+    - name: "Pre | Load filesystem configuration"
+      ansible.builtin.include_vars:
+        file: vars/filesystem.yml
+      tags: always
+
     - name: "Pre | Load niri / DankMaterialShell configuration"
       ansible.builtin.include_vars:
         file: vars/niri.yml
@@ -79,11 +84,31 @@
       failed_when: false
       tags: always
 
+    - name: "Pre | Warn if Git configuration unavailable"
+      ansible.builtin.debug:
+        msg: >-
+          WARNING: vars/git.yml could not be loaded or is missing git_user_name.
+          Git identity (user.name, user.email) will not be configured.
+          Copy vars/git.yml.template to vars/git.yml, fill in your details, and re-run:
+          ansible-playbook fedora-do.yml -K --tags git-config
+      when: git_user_name is not defined
+      tags: always
+
     - name: "Pre | Load vault secrets (if present)"
       ansible.builtin.include_vars:
         file: vars/secrets.yml
       failed_when: false
       no_log: true
+      tags: always
+
+    - name: "Pre | Warn if vault secrets unavailable"
+      ansible.builtin.debug:
+        msg: >-
+          WARNING: vars/secrets.yml could not be loaded — either the vault password
+          was not provided (-J) or the file does not exist. Features requiring SMB
+          credentials (backup, restore, SMB mounts) will be skipped automatically.
+          Re-run with: ansible-playbook fedora-do.yml -K -J --tags backup
+      when: smb_credentials is not defined
       tags: always
 
     - name: "Pre | Initialize run tracking"
@@ -92,6 +117,7 @@
         _changed_rpms:     []
         _changed_flatpaks: []
         _backup_results:   []
+        _nocow_results:    []
         _reboot_reasons:   []
       tags: always
 
@@ -143,6 +169,9 @@
     - name: "Include | KVM/QEMU virtualization stack"
       ansible.builtin.import_tasks: tasks/virtualization.yml
 
+    - name: "Include | noCOW directory setup"
+      ansible.builtin.import_tasks: tasks/nocow.yml
+
     - name: "Include | SMB share mounts"
       ansible.builtin.import_tasks: tasks/smb.yml
 
@@ -191,6 +220,12 @@
           {% endif %}
           {% if (_changed_rpms | length == 0) and (_changed_flatpaks | length == 0) %}
           All packages were already up to date — no changes made.
+          {% endif %}
+          {% if _nocow_results | length > 0 %}
+          [NOCOW DIRECTORIES]
+          {% for msg in _nocow_results %}
+            ✔  {{ msg }}
+          {% endfor %}
           {% endif %}
           {% if _backup_results | length > 0 %}
           [BACKUP / RESTORE]

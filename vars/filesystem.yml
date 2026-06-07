@@ -1,0 +1,16 @@
+---
+# =============================================================================
+# vars/filesystem.yml — Filesystem Configuration
+# =============================================================================
+# nocow_dirs: directories to create and mark with the No-Copy-on-Write
+# attribute (+C via chattr). Only applied when the directory resides on a
+# btrfs filesystem — silently skipped on ext4, xfs, or any other filesystem.
+#
+# Use this for large-file workloads where CoW causes fragmentation and write
+# amplification: VM disk images, container storage, database files, etc.
+# Paths accept ~/... notation.
+# =============================================================================
+
+nocow_dirs:
+  - ~/VMs
+  - ~/Containers

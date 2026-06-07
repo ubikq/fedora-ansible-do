@@ -9,6 +9,11 @@
 #   integers → plain number      (no quotes)
 # =============================================================================
 
+# ── GDM greeter scaling ────────────────────────────────────────────────────────
+# Integer scaling applied to the GDM login screen only (not the desktop session).
+# Set to 2 on 4K / HiDPI machines, leave at 1 on 1080p machines.
+gdm_scaling_factor: 2
+
 # ── Appearance ─────────────────────────────────────────────────────────────────
 gnome_interface_settings:
   - { key: "/org/gnome/desktop/interface/color-scheme",       value: "'prefer-dark'" }
@@ -46,7 +51,7 @@ gnome_night_light_settings:
 # ── Nautilus File Manager ───────────────────────────────────────────────────────
 gnome_nautilus_settings:
   - { key: "/org/gnome/nautilus/preferences/show-hidden-files",      value: "true" }
-  - { key: "/org/gnome/nautilus/preferences/default-folder-viewer",  value: "'icon-view'" }
+  - { key: "/org/gnome/nautilus/preferences/default-folder-viewer",  value: "'list-view'" }
   - { key: "/org/gnome/nautilus/preferences/sort-directories-first", value: "true" }
 
 # ── Dash-to-Dock Extension ──────────────────────────────────────────────────────
@@ -55,16 +60,17 @@ gnome_dash_to_dock_uuid: "dash-to-dock@micxgx.gmail.com"
 
 gnome_dash_to_dock_settings:
   - { key: "/org/gnome/shell/extensions/dash-to-dock/dock-position",    value: "'BOTTOM'" }
-  - { key: "/org/gnome/shell/extensions/dash-to-dock/extend-height",    value: "false" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/extend-height",    value: "true" }
   - { key: "/org/gnome/shell/extensions/dash-to-dock/dock-fixed",       value: "true" }
   - { key: "/org/gnome/shell/extensions/dash-to-dock/autohide",         value: "false" }
   - { key: "/org/gnome/shell/extensions/dash-to-dock/show-apps-at-top", value: "true" }
   - { key: "/org/gnome/shell/extensions/dash-to-dock/show-trash",       value: "true" }
   - { key: "/org/gnome/shell/extensions/dash-to-dock/show-mounts",      value: "false" }
-  - { key: "/org/gnome/shell/extensions/dash-to-dock/dash-max-icon-size", value: "40" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/dash-max-icon-size", value: "26" }
   - { key: "/org/gnome/shell/extensions/dash-to-dock/click-action",     value: "'minimize'" }
   - { key: "/org/gnome/shell/extensions/dash-to-dock/transparency-mode", value: "'FIXED'" }
   - { key: "/org/gnome/shell/extensions/dash-to-dock/background-opacity", value: "0.8" }
+  - { key: "/org/gnome/shell/extensions/dash-to-dock/custom-theme-shrink", value: "true" }
 
 # ── Additional extensions to enable (list of UUIDs) ────────────────────────────
 # Add extension UUIDs here — they must already be installed on the system.

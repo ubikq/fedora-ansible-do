@@ -184,3 +184,56 @@
     - name: "GNOME | Record Dash-to-Dock settings failure"
       ansible.builtin.set_fact:
         _run_errors: "{{ (_run_errors | default([])) + ['GNOME: Dash-to-Dock dconf settings failed — check vars/gnome.yml'] }}"
+
+# ── GDM greeter HiDPI scaling ─────────────────────────────────────────────────
+# GDM runs as its own system user — its dconf must be configured via the system
+# dconf profile. The profile must reference file-db:/usr/share/gdm/greeter-dconf-defaults
+# (built-in GNOME greeter defaults compiled by the gdm package); omitting it
+# strips GDM of its session defaults and breaks the login screen.
+- name: "GNOME | Configure GDM greeter HiDPI scaling"
+  tags: gnome
+  block:
+    - name: "GNOME | Ensure GDM dconf profile is present"
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/dconf/profile/gdm
+        content: |
+          user-db:user
+          system-db:gdm
+          file-db:/usr/share/gdm/greeter-dconf-defaults
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: "GNOME | Ensure GDM dconf database directory exists"
+      become: true
+      ansible.builtin.file:
+        path: /etc/dconf/db/gdm.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: "GNOME | Write GDM HiDPI scaling keyfile"
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/dconf/db/gdm.d/00-hidpi
+        content: |
+          [org/gnome/desktop/interface]
+          scaling-factor=uint32 {{ gdm_scaling_factor }}
+        owner: root
+        group: root
+        mode: '0644'
+      register: _gdm_hidpi_result
+
+    - name: "GNOME | Compile GDM dconf database"
+      become: true
+      ansible.builtin.command:
+        cmd: dconf update
+      when: _gdm_hidpi_result is changed
+      changed_when: true
+
+  rescue:
+    - name: "GNOME | Record GDM scaling configuration failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: GDM greeter scaling configuration failed'] }}"

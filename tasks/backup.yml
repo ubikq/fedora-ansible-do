@@ -15,9 +15,21 @@
 #   flatpak-restore →  Flatpak config restore only
 #   rpm-backup      →  RPM config backup only
 #   rpm-restore     →  RPM config restore only
+#
+# NOTE: tags must appear on the include_tasks statements themselves, not only
+# inside the included files. include_tasks is dynamic — Ansible cannot see
+# sub-task tags at parse time, so the include statement must carry a matching
+# tag for --tags filtering to select it.
 # =============================================================================
 
 - ansible.builtin.include_tasks: backup/flatpak-backup.yml
+  tags: [never, backup, flatpak-backup]
+
 - ansible.builtin.include_tasks: backup/flatpak-restore.yml
+  tags: [never, restore, flatpak-restore]
+
 - ansible.builtin.include_tasks: backup/rpm-backup.yml
+  tags: [never, backup, rpm-backup]
+
 - ansible.builtin.include_tasks: backup/rpm-restore.yml
+  tags: [never, restore, rpm-restore]

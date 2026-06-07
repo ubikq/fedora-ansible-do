@@ -1,5 +1,21 @@
 # Fedora Workstation Setup — Ansible Playbook
 
+## Contents
+
+- [About This Project](#about-this-project)
+- [Disclaimer](#-disclaimer)
+- [Project Structure](#project-structure)
+- [Quick Start](#quick-start)
+- [Tag Reference](#tag-reference)
+- [Adding Applications](#adding-applications)
+- [SMB Shares](#smb-shares)
+- [noCOW Directories](#nocow-directories)
+- [Backup & Restore](#backup--restore)
+- [GNOME Settings](#gnome-settings)
+- [License](#license)
+
+---
+
 ## About This Project
 
 This Ansible playbook automates the post-install configuration of Fedora Workstation, systematically transforming a stock setup into a fully provisioned environment. To keep the project clean and maintainable, all application lists are centralized in a single file (`vars/app_catalog.yml`), while the logic is organized into dedicated task and variable files. 
@@ -16,9 +32,11 @@ This Ansible playbook automates the post-install configuration of Fedora Worksta
     
 - **User Environment Personalization**: Deploys localized dotfiles, system preferences, shell configurations, and workflow tools to match a specific user's desktop routine.
 
-- **Configuration Backup & Restore**: Backs up and restores application configuration to and from a network share, covering both Flatpak and RPM-installed applications. Maintains dated archives, a rolling latest snapshot, and optional monthly snapshots with configurable retention. See the [Backup & Restore](#backup--restore) section for details.
+- **Configuration Backup & Restore** (opt-in — excluded from a default run): Backs up and restores application configuration to and from a network share, covering both Flatpak and RPM-installed applications. Maintains dated archives, a rolling latest snapshot, and optional monthly snapshots with configurable retention. These tasks **never run automatically** — they must be triggered explicitly with `--tags backup` or `--tags restore`. See the [Backup & Restore](#backup--restore) section for details.
 
-- **Niri Compositor & DankMaterialShell** (opt-in, `--tags niri`): Installs the niri scrolling tiling Wayland compositor alongside the DankMaterialShell desktop shell. A default `config.kdl` with customized keybindings is deployed on first run as a ready-to-use starting point for customization. Once personalized, the configuration can be backed up and restored across fresh installations using the playbook's built-in backup system.
+- **noCOW Directory Setup**: Creates a configurable list of directories and marks each with the No-Copy-on-Write attribute (`chattr +C`), but **only when the directory resides on a btrfs filesystem** — silently skipped on ext4, xfs, or any other filesystem. Prevents fragmentation and write amplification for large-file workloads such as VM disk images. Directories are configured in `vars/filesystem.yml`.
+
+- **Niri Compositor & DankMaterialShell** (opt-in — excluded from a default run): Installs the niri scrolling tiling Wayland compositor alongside the DankMaterialShell desktop shell. Must be triggered explicitly with `--tags niri`. A default `config.kdl` with customized keybindings is deployed on first run as a ready-to-use starting point for customization. Once personalized, the configuration can be backed up and restored across fresh installations using the playbook's built-in backup system.
 
 ### Feature Roadmap
 
@@ -56,6 +74,7 @@ fedora-ansible-do/
 │   ├── app_catalog.yml         ← ✏️  Edit this to add/remove apps (RPM + Flatpak)
 │   ├── gnome.yml               ← ✏️  Edit this for GNOME dconf settings
 │   ├── smb.yml                 ← ✏️  Edit this for SMB share definitions
+│   ├── filesystem.yml          ← ✏️  Edit this for noCOW directory list
 │   ├── backup.yml              ← ✏️  Edit this for backup/restore paths and retention
 │   ├── rpm_configs.yml         ← ✏️  Edit this to add/remove RPM config backup entries
 │   ├── git.yml.template        ← Copy → vars/git.yml, fill in (not committed)
@@ -69,13 +88,21 @@ fedora-ansible-do/
     ├── flatpaks.yml            ← Flathub setup + Flatpak installs (same source)
     ├── docker.yml              ← Docker CE + Compose plugin
     ├── virtualization.yml      ← KVM/QEMU/libvirt stack
+    ├── nocow.yml               ← noCOW attribute setup (reads from vars/filesystem.yml)
     ├── smb.yml                 ← Credential files + fstab mounts
     ├── gnome.yml               ← dconf settings + extensions
     ├── fonts.yml               ← System font installation + fc-cache
     ├── shell.yml               ← fish shell + starship prompt
     ├── git-config.yml          ← Git globals + GNOME Keyring credential helper
     ├── cleanup.yml             ← autoremove + cache clear
-    └── backup.yml              ← Flatpak config backup / restore (tags: backup, restore)
+    ├── backup.yml              ← Dispatcher — includes the four sub-files below
+    ├── nocow/
+    │   └── dir.yml             ← Per-directory create + chattr logic
+    └── backup/
+        ├── flatpak-backup.yml  ← Flatpak config backup  (tags: backup, flatpak-backup)
+        ├── flatpak-restore.yml ← Flatpak config restore (tags: restore, flatpak-restore)
+        ├── rpm-backup.yml      ← RPM config backup      (tags: backup, rpm-backup)
+        └── rpm-restore.yml     ← RPM config restore     (tags: restore, rpm-restore)
 ```
 
 ---
@@ -132,6 +159,7 @@ ansible-playbook fedora-do.yml -K -J
 | `gaming` | *(no active apps — category reserved)* |
 | `docker` | Docker CE, containerd, compose plugin |
 | `virt` | KVM/QEMU, libvirt, virt-manager — full virtualisation stack |
+| `nocow` | Create directories from `vars/filesystem.yml` and set No-Copy-on-Write (`chattr +C`) on each — btrfs only, safe no-op on other filesystems |
 | `smb` | Credential files, fstab entries, mounts |
 | `gnome` | Dark mode, Dash-to-Dock, Night Light, Nautilus, dconf keys |
 | `firmware` | fwupdmgr metadata refresh + firmware updates |
@@ -291,6 +319,30 @@ smb_credentials:
 Multiple shares can share the same `cred_key` / `cred_file` (e.g. two shares
 on the same NAS with the same login). The playbook writes each unique
 credential file only once.
+
+---
+
+## noCOW Directories
+
+Edit **`vars/filesystem.yml`** to list directories that should have the No-Copy-on-Write attribute set. For each directory the playbook will:
+
+1. Create it if it does not exist
+2. Detect whether it resides on a btrfs filesystem
+3. Set `chattr +C` on it if on btrfs and not already set — skipped silently otherwise
+
+```yaml
+# vars/filesystem.yml
+nocow_dirs:
+  - ~/VMs           # VM disk images
+  - ~/Containers    # container storage
+```
+
+> **Why noCOW?** btrfs Copy-on-Write is excellent for small files but causes severe fragmentation and write amplification for large, frequently-overwritten files like VM disk images (`.qcow2`, `.raw`) and database files. Setting `+C` on a directory means new files created inside it inherit the flag automatically.
+
+To run standalone:
+```bash
+ansible-playbook fedora-do.yml -K --tags nocow
+```
 
 ---
 

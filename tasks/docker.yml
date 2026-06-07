@@ -3,34 +3,32 @@
 # tasks/docker.yml — Docker CE & Docker Compose
 # =============================================================================
 
-- name: "Docker | Gather installed package facts"
-  ansible.builtin.package_facts:
-    manager: auto
-  tags: docker
-
-- name: "Docker | Remove legacy docker packages if present"
-  become: true
-  ansible.builtin.dnf:
-    name: "{{ _legacy | select('in', ansible_facts.packages) | list }}"
-    state: absent
-  vars:
-    _legacy:
-      - docker
-      - docker-client
-      - docker-client-latest
-      - docker-common
-      - docker-latest
-      - docker-latest-logrotate
-      - docker-logrotate
-      - docker-selinux
-      - docker-engine-selinux
-      - docker-engine
-  when: _legacy | select('in', ansible_facts.packages) | list | length > 0
-  tags: docker
-
 - name: "Docker | Repository and service setup"
   tags: docker
   block:
+    - name: "Docker | Gather installed package facts"
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: "Docker | Remove legacy docker packages if present"
+      become: true
+      ansible.builtin.dnf:
+        name: "{{ _legacy | select('in', ansible_facts.packages) | list }}"
+        state: absent
+      vars:
+        _legacy:
+          - docker
+          - docker-client
+          - docker-client-latest
+          - docker-common
+          - docker-latest
+          - docker-latest-logrotate
+          - docker-logrotate
+          - docker-selinux
+          - docker-engine-selinux
+          - docker-engine
+      when: _legacy | select('in', ansible_facts.packages) | list | length > 0
+
     - name: "Docker | Add Docker CE repository"
       become: true
       ansible.builtin.yum_repository:

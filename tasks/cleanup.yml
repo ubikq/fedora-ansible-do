@@ -7,7 +7,14 @@
   become: true
   ansible.builtin.dnf:
     autoremove: true
+  register: _cleanup_autoremove_result
   failed_when: false
+  tags: cleanup
+
+- name: "Cleanup | Record autoremove failure"
+  ansible.builtin.set_fact:
+    _run_errors: "{{ _run_errors + ['Cleanup: dnf autoremove failed — run manually: sudo dnf autoremove'] }}"
+  when: _cleanup_autoremove_result.failed | default(false)
   tags: cleanup
 
 - name: "Cleanup | Clear DNF package cache"
@@ -19,6 +26,12 @@
   failed_when: false
   tags: cleanup
 
+- name: "Cleanup | Record cache clear failure"
+  ansible.builtin.set_fact:
+    _run_errors: "{{ _run_errors + ['Cleanup: dnf clean packages failed — run manually: sudo dnf clean packages'] }}"
+  when: dnf_clean_result.rc | default(0) != 0
+  tags: cleanup
+
 - name: "Cleanup | Update Flatpak apps"
   become: true
   ansible.builtin.command:
@@ -26,4 +39,10 @@
   register: flatpak_update_result
   changed_when: "'app/' in flatpak_update_result.stdout or 'runtime/' in flatpak_update_result.stdout"
   failed_when: false
+  tags: cleanup
+
+- name: "Cleanup | Record Flatpak update failure"
+  ansible.builtin.set_fact:
+    _run_errors: "{{ _run_errors + ['Cleanup: Flatpak update failed — run manually: flatpak update'] }}"
+  when: flatpak_update_result.rc | default(0) != 0
   tags: cleanup

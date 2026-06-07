@@ -11,21 +11,40 @@
 # =============================================================================
 
 # ── Flathub setup (always) ────────────────────────────────────────────────────
-- name: "Flatpak | Ensure flatpak is installed"
-  become: true
-  ansible.builtin.dnf:
-    name: flatpak
-    state: present
+- name: "Flatpak | Flathub setup"
   tags: always
+  block:
+    - name: "Flatpak | Ensure flatpak is installed"
+      become: true
+      ansible.builtin.dnf:
+        name: flatpak
+        state: present
 
-- name: "Flatpak | Add Flathub as system-wide remote"
-  become: true
-  community.general.flatpak_remote:
-    name: flathub
-    state: present
-    flatpakrepo_url: "https://dl.flathub.org/repo/flathub.flatpakrepo"
-    method: system
-  tags: always
+    - name: "Flatpak | Add Flathub as system-wide remote"
+      become: true
+      community.general.flatpak_remote:
+        name: flathub
+        state: present
+        flatpakrepo_url: "https://dl.flathub.org/repo/flathub.flatpakrepo"
+        method: system
+
+    - name: "Flatpak | Remove user-level Flathub remote (Fedora filtered default)"
+      ansible.builtin.command:
+        cmd: flatpak remote-delete --user flathub
+      register: _fb_user_remote_del
+      changed_when: _fb_user_remote_del.rc == 0
+      failed_when: false
+
+    - name: "Flatpak | Remove filter from system Flathub remote"
+      become: true
+      ansible.builtin.command:
+        cmd: flatpak remote-modify --system --no-filter flathub
+      changed_when: false
+      failed_when: false
+  rescue:
+    - name: "Flatpak | Record Flathub setup failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['Flatpak / Flathub setup failed — all Flatpak installs will be skipped'] }}"
 
 # ── Tools ─────────────────────────────────────────────────────────────────────
 - name: "Flatpak [tools] | Install Flatpak apps"
@@ -109,6 +128,24 @@
   loop: "{{ _fp_productivity.results | default([]) }}"
   loop_control:
     label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
+  tags: productivity
+
+- name: "Flatpak [productivity] | Remove DNF LibreOffice when Flatpak version is catalogued"
+  become: true
+  ansible.builtin.dnf:
+    name: "libreoffice*"
+    state: absent
+  when: "'org.libreoffice.LibreOffice' in (app_catalog.productivity.flatpak | default([]))"
+  register: _lo_dnf_remove_result
+  failed_when: false
+  tags: productivity
+
+- name: "Flatpak [productivity] | Record LibreOffice DNF removal failure"
+  ansible.builtin.set_fact:
+    _run_errors: "{{ _run_errors + ['LibreOffice DNF removal failed — system and Flatpak versions may both be installed. Remove manually: sudo dnf remove libreoffice\\*'] }}"
+  when:
+    - "'org.libreoffice.LibreOffice' in (app_catalog.productivity.flatpak | default([]))"
+    - _lo_dnf_remove_result.failed | default(false)
   tags: productivity
 
 # ── Communication ─────────────────────────────────────────────────────────────

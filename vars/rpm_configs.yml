@@ -47,14 +47,15 @@ rpm_configs:
   # ── Development ───────────────────────────────────────────────────────────────
   code:
     paths:
-      - ~/.config/Code/User          # settings.json, keybindings.json, snippets/
+      - ~/.config/Code               # settings.json, keybindings.json, snippets/
 
   # ── Productivity ──────────────────────────────────────────────────────────────
   # (no RPM packages with persistent configuration)
 
   # ── Communication ─────────────────────────────────────────────────────────────
   brave-browser:
-    paths: []
+    paths:
+      - ~/.config/BraveSoftware
 
   # ── Graphics ──────────────────────────────────────────────────────────────────
   # (no RPM packages with persistent configuration)
@@ -65,7 +66,8 @@ rpm_configs:
       - ~/.config/mpv                # config, input bindings, scripts, shaders
 
   haruna:
-    paths: []
+    paths:
+      - ~/.config/haruna
 
     # ── Gaming ────────────────────────────────────────────────────────────────────
   # (no RPM packages with persistent configuration)
@@ -82,9 +84,15 @@ rpm_configs:
       - ~/.icons                             # Custom icon sets installed per-user
       - ~/.local/share/fonts                 # User-installed fonts
       - ~/.local/share/backgrounds           # Custom wallpapers
+      - ~/.local/share/icons                 # Icons
     files:
       - ~/.config/dconf/dconf-settings.ini   # The dconf database is backed and restored as part of tasks
       # - ~/.config/dconf/user               # Alternative: raw dconf binary (not human readable)
+
+  gnome-keyrings:
+    no_package_check: true
+    paths:
+      - ~/.local/share/keyrings   # Gnome keyrings
 
   fish-shell:
     no_package_check: true
@@ -97,9 +105,20 @@ rpm_configs:
     no_package_check: true
     paths:
       - ~/.local/share/flatpak/overrides   # per-app permission overrides (set by Flatseal)
+
   niri-and-dms:
     no_package_check: true
     paths:
       - ~/.config/DankMaterialShell
       - ~/.config/niri
       - ~/.local/state/DankMaterialShell
+
+  appimage-shutterencoder:
+    no_package_check: true
+    paths:
+      - ~/Shutter Encoder
+  
+  appimage-logseq:
+    no_package_check: true
+    paths:
+      - ~/.config/Logseq

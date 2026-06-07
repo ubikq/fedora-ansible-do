@@ -54,7 +54,16 @@
     enabled: true
     scope: user
   when: "'syncthing' in (app_catalog.tools.rpm | default([]))"
+  register: _syncthing_service_result
   failed_when: false
+  tags: tools
+
+- name: "Packages [tools] | Record syncthing service failure"
+  ansible.builtin.set_fact:
+    _run_errors: "{{ _run_errors + ['syncthing user service could not be enabled — start manually: systemctl --user enable --now syncthing'] }}"
+  when:
+    - "'syncthing' in (app_catalog.tools.rpm | default([]))"
+    - _syncthing_service_result.failed | default(false)
   tags: tools
 
 # ── Desktop ───────────────────────────────────────────────────────────────────

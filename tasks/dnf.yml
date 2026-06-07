@@ -4,15 +4,21 @@
 # =============================================================================
 
 - name: "DNF | Optimise /etc/dnf/dnf.conf"
-  become: true
-  ansible.builtin.lineinfile:
-    path: /etc/dnf/dnf.conf
-    regexp: "^{{ item.key }}="
-    line: "{{ item.key }}={{ item.value }}"
-    insertafter: "^\\[main\\]"
-    backup: true
-  loop: "{{ dnf_conf_options | dict2items }}"
   tags: always
+  block:
+    - name: "DNF | Apply dnf.conf options"
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/dnf/dnf.conf
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+        insertafter: "^\\[main\\]"
+        backup: true
+      loop: "{{ dnf_conf_options | dict2items }}"
+  rescue:
+    - name: "DNF | Record dnf.conf optimisation failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['DNF: /etc/dnf/dnf.conf could not be updated — default DNF settings will be used'] }}"
 
 - name: "DNF | Full system update"
   tags: always

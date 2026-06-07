@@ -1,0 +1,26 @@
+---
+# =============================================================================
+# tasks/nocow.yml — No-Copy-on-Write Directory Setup
+# =============================================================================
+# Creates directories listed in nocow_dirs (vars/filesystem.yml) and sets the
+# No-Copy-on-Write attribute (+C via chattr) on each, but only when the
+# directory resides on a btrfs filesystem. Safe no-op on ext4, xfs, or any
+# other filesystem — the chattr step is skipped entirely.
+#
+# Use for VM disk images, container storage, or any large-file workload where
+# btrfs CoW causes fragmentation and write amplification.
+# =============================================================================
+
+- name: "NoCOW | Configure noCOW directories"
+  tags: nocow
+  block:
+    - name: "NoCOW | Apply noCOW to each configured directory"
+      ansible.builtin.include_tasks: nocow/dir.yml
+      loop: "{{ nocow_dirs | default([]) }}"
+      loop_control:
+        loop_var: _nocow_dir
+        label: "{{ _nocow_dir }}"
+  rescue:
+    - name: "NoCOW | Record noCOW setup failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['noCOW setup failed — check nocow_dirs in vars/filesystem.yml'] }}"

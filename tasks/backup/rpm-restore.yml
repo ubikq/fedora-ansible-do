@@ -25,11 +25,11 @@
       {{ smb_shares | default([])
          | map(attribute='mount_point')
          | map('replace', '~', ansible_facts.user_dir)
-         | select('in', rpm_backup_base_dir)
+         | select('in', rpm_backup_base_dir | replace('~', ansible_facts.user_dir))
          | sort(reverse=true)
          | list
          | first
-         | default(rpm_backup_base_dir | dirname) }}
+         | default(rpm_backup_base_dir | replace('~', ansible_facts.user_dir) | dirname) }}
   when: _restore_creds_ok
   tags: [never, restore, rpm-restore]
 
@@ -69,8 +69,8 @@
   block:
     - name: "RPM Restore | Set run variables"
       ansible.builtin.set_fact:
-        _rr_base_dir: "{{ rpm_backup_base_dir }}"
-        _rr_tmp_dir: "{{ rpm_backup_tmp_dir }}"
+        _rr_base_dir: "{{ rpm_backup_base_dir | replace('~', ansible_facts.user_dir) }}"
+        _rr_tmp_dir: "{{ rpm_backup_tmp_dir | replace('~', ansible_facts.user_dir) }}"
 
     - name: "RPM Restore | Prepare staging directory"
       ansible.builtin.file:

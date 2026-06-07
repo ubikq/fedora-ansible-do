@@ -109,3 +109,7 @@
       ansible.builtin.set_fact:
         _reboot_reasons: "{{ _reboot_reasons + ['SMB _netdev mounts configured — reboot to verify automount'] }}"
       when: _smb_mount_results.results | selectattr('changed', 'true') | list | length > 0
+  rescue:
+    - name: "SMB | Record share configuration failure"
+      ansible.builtin.set_fact:
+        _run_errors: "{{ (_run_errors | default([])) + ['SMB share configuration failed — cifs-utils, credential files, or mount points could not be set up'] }}"

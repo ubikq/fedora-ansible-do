@@ -24,11 +24,11 @@
       {{ smb_shares | default([])
          | map(attribute='mount_point')
          | map('replace', '~', ansible_facts.user_dir)
-         | select('in', flatpak_backup_base_dir)
+         | select('in', flatpak_backup_base_dir | replace('~', ansible_facts.user_dir))
          | sort(reverse=true)
          | list
          | first
-         | default(flatpak_backup_base_dir | dirname) }}
+         | default(flatpak_backup_base_dir | replace('~', ansible_facts.user_dir) | dirname) }}
   when: _restore_creds_ok
   tags: [never, restore, flatpak-restore]
 
@@ -74,8 +74,8 @@
              | select
              | flatten
              | list }}
-        _fr_base_dir: "{{ flatpak_backup_base_dir }}"
-        _fr_tmp_dir: "{{ flatpak_backup_tmp_dir }}"
+        _fr_base_dir: "{{ flatpak_backup_base_dir | replace('~', ansible_facts.user_dir) }}"
+        _fr_tmp_dir: "{{ flatpak_backup_tmp_dir | replace('~', ansible_facts.user_dir) }}"
 
     - name: "Flatpak Restore | Prepare staging directory"
       ansible.builtin.file:

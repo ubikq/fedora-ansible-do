@@ -25,11 +25,11 @@
       {{ smb_shares | default([])
          | map(attribute='mount_point')
          | map('replace', '~', ansible_facts.user_dir)
-         | select('in', rpm_backup_base_dir)
+         | select('in', rpm_backup_base_dir | replace('~', ansible_facts.user_dir))
          | sort(reverse=true)
          | list
          | first
-         | default(rpm_backup_base_dir | dirname) }}
+         | default(rpm_backup_base_dir | replace('~', ansible_facts.user_dir) | dirname) }}
   when: _backup_creds_ok
   tags: [never, backup, rpm-backup]
 
@@ -69,8 +69,8 @@
   block:
     - name: "RPM Backup | Set run variables"
       ansible.builtin.set_fact:
-        _rb_base_dir: "{{ rpm_backup_base_dir }}"
-        _rb_tmp_dir: "{{ rpm_backup_tmp_dir }}"
+        _rb_base_dir: "{{ rpm_backup_base_dir | replace('~', ansible_facts.user_dir) }}"
+        _rb_tmp_dir: "{{ rpm_backup_tmp_dir | replace('~', ansible_facts.user_dir) }}"
         _rb_date: "{{ ansible_facts.date_time.date }}"
         _bk_max: "{{ backup_max_archives | int }}"
         _bk_min: "{{ backup_min_archives | int }}"
@@ -246,11 +246,9 @@
       when: (_rb_existing_paths + _rb_existing_files) | length > 0
 
     - name: "RPM Backup | Compress to dated archive"
-      community.general.archive:
-        path: "{{ _rb_tmp_dir }}/configs"
-        dest: "{{ _rb_tmp_dir }}/rpm_backup_{{ _rb_date }}.tar.gz"
-        format: gz
-        mode: '0644'
+      ansible.builtin.command:
+        cmd: "tar -czf {{ _rb_tmp_dir }}/rpm_backup_{{ _rb_date }}.tar.gz -C {{ _rb_tmp_dir }} configs"
+      changed_when: true
 
     - name: "RPM Backup | Copy dated archive to share"
       ansible.builtin.command:

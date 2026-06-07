@@ -24,11 +24,11 @@
       {{ smb_shares | default([])
          | map(attribute='mount_point')
          | map('replace', '~', ansible_facts.user_dir)
-         | select('in', flatpak_backup_base_dir)
+         | select('in', flatpak_backup_base_dir | replace('~', ansible_facts.user_dir))
          | sort(reverse=true)
          | list
          | first
-         | default(flatpak_backup_base_dir | dirname) }}
+         | default(flatpak_backup_base_dir | replace('~', ansible_facts.user_dir) | dirname) }}
   when: _backup_creds_ok
   tags: [never, backup, flatpak-backup]
 
@@ -74,8 +74,8 @@
              | select
              | flatten
              | list }}
-        _fb_base_dir: "{{ flatpak_backup_base_dir }}"
-        _fb_tmp_dir: "{{ flatpak_backup_tmp_dir }}"
+        _fb_base_dir: "{{ flatpak_backup_base_dir | replace('~', ansible_facts.user_dir) }}"
+        _fb_tmp_dir: "{{ flatpak_backup_tmp_dir | replace('~', ansible_facts.user_dir) }}"
         _fb_date: "{{ ansible_facts.date_time.date }}"
         _bk_max: "{{ backup_max_archives | int }}"
         _bk_min: "{{ backup_min_archives | int }}"
@@ -137,11 +137,9 @@
       when: _fb_apps_with_config | length > 0
 
     - name: "Flatpak Backup | Compress to dated archive"
-      community.general.archive:
-        path: "{{ _fb_tmp_dir }}/app"
-        dest: "{{ _fb_tmp_dir }}/flatpak_backup_{{ _fb_date }}.tar.gz"
-        format: gz
-        mode: '0644'
+      ansible.builtin.command:
+        cmd: "tar -czf {{ _fb_tmp_dir }}/flatpak_backup_{{ _fb_date }}.tar.gz -C {{ _fb_tmp_dir }} app"
+      changed_when: true
 
     - name: "Flatpak Backup | Copy dated archive to share"
       ansible.builtin.command:

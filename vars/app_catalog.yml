@@ -60,6 +60,7 @@ app_catalog:
       - bat # Replacement for the traditional Linux cat (concatenate) command with syntax highlghting
       - fzf # Fuzzy Finder is a blazing-fast, general-purpose command-line filter
       - fastfetch # System information tool for your terminal
+      - micro # Micro - excellent terminal based text editor - nicer to use than nano
       - pavucontrol # Required to get my S/PIDF 5.1 surround sound working
       - alsa-plugins-pulseaudio # Dependency to get 5.1 surround sound working
       - alsa-plugins-a52 # Dependency to get 5.1 surround sound working
@@ -72,6 +73,7 @@ app_catalog:
       - restic # Command-line backup program - fast, efficient, secure, and verifiably accurate with deduplication capabilities
       - syncthing # Continuous file synchronization program between workstation and my nas
       - doublecmd-qt6 # Dual pane file manager - requires qt6 optimizations to enable dark mode
+      - meld # Amazing text and directory comparison tool
     flatpak:
       - io.github.kolunmi.Bazaar # Flatpak app store and manager
       - io.github.flattool.Warehouse # Manage flatpaks including version control
@@ -82,11 +84,11 @@ app_catalog:
       - io.github.martchus.syncthingtray # System tray status and informatin for syncthing
       - org.kde.dolphin #  KDE's file manager - more capable and feature rich than the Gnome default
       - org.kde.filelight # Visualize disk usage to make cleanup easier.
-      - org.kde.kwrite # Text editor with syntax highlighting and auto-indentation (Basically kate without the extra features)
-      - io.github.zyedidia.micro # Micro - excellent terminal based text editor - nicer to use than nano
-      - org.gnome.meld # Amazing text and directory comparison tool
+      - io.github.shundhammer.qdirstat # Graphical application to show where your disk space has gone and to help you to clean it up
       - org.cockpit_project.CockpitClient # Web-based graphicsl server interface via ssh for  containers, virtual machines etc.
       - io.github.pwr_solaar.solaar # Logitech keyboard, mouse and trackpad management and monitoring
+      - org.kde.kate # Fast multi-document, multi-view text editor for programmers by KDE. Features LSP support, projects, git integration and much more
+      # - org.kde.kwrite # Text editor with more basic features as Kate (Basically kate without the extra features)
       # - org.gnome.DejaDup # Simple backup tool for (encrypted, off-site, and regular) bakups using Restic
       # - org.gnome.Boxes # Flatpak version can replace the default installed version if only basic functionalityis required.
 
@@ -149,7 +151,7 @@ app_catalog:
       - org.nomacs.ImageLounge # Free, open source image viewer
       - org.kde.krita # Full-featured digital art studio
       - org.freecad.FreeCAD # Parametric 3D modeler
-      # - flathub org.gimp.GIMP # GNU Image Manipulation Program
+      # - org.gimp.GIMP # GNU Image Manipulation Program
       # - org.inkscape.Inkscape # Vector graphics editor
       # - org.darktable.Darktable # Manage and raw files and images in a databace and develop/enhance them
       # - com.obsproject.Studio # Video capturing, recording, and live streaming
