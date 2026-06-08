@@ -85,6 +85,7 @@ rpm_configs:
       - ~/.local/share/fonts                 # User-installed fonts
       - ~/.local/share/backgrounds           # Custom wallpapers
       - ~/.local/share/icons                 # Icons
+      - ~/.local/share/applications                # .desktop files for WPA apps etc used for app launcher and DMS panel
     files:
       - ~/.config/dconf/dconf-settings.ini   # The dconf database is backed and restored as part of tasks
       # - ~/.config/dconf/user               # Alternative: raw dconf binary (not human readable)
@@ -117,8 +118,3 @@ rpm_configs:
     no_package_check: true
     paths:
       - ~/Shutter Encoder
-  
-  appimage-logseq:
-    no_package_check: true
-    paths:
-      - ~/.config/Logseq
