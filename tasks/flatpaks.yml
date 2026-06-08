@@ -130,13 +130,24 @@
     label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
   tags: productivity
 
+- name: "Flatpak [productivity] | Check for DNF LibreOffice packages"
+  ansible.builtin.command:
+    cmd: rpm -qa libreoffice*
+  register: _lo_rpm_check
+  changed_when: false
+  failed_when: false
+  when: "'org.libreoffice.LibreOffice' in (app_catalog.productivity.flatpak | default([]))"
+  tags: productivity
+
 - name: "Flatpak [productivity] | Remove DNF LibreOffice when Flatpak version is catalogued"
   become: true
-  ansible.builtin.dnf:
-    name: "libreoffice*"
-    state: absent
-  when: "'org.libreoffice.LibreOffice' in (app_catalog.productivity.flatpak | default([]))"
+  ansible.builtin.command:
+    cmd: dnf remove -y 'libreoffice*'
+  when:
+    - "'org.libreoffice.LibreOffice' in (app_catalog.productivity.flatpak | default([]))"
+    - (_lo_rpm_check.stdout | default('')) | length > 0
   register: _lo_dnf_remove_result
+  changed_when: true
   failed_when: false
   tags: productivity
 
@@ -145,6 +156,7 @@
     _run_errors: "{{ _run_errors + ['LibreOffice DNF removal failed — system and Flatpak versions may both be installed. Remove manually: sudo dnf remove libreoffice\\*'] }}"
   when:
     - "'org.libreoffice.LibreOffice' in (app_catalog.productivity.flatpak | default([]))"
+    - (_lo_rpm_check.stdout | default('')) | length > 0
     - _lo_dnf_remove_result.failed | default(false)
   tags: productivity
 

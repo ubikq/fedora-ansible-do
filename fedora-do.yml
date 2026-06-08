@@ -23,7 +23,7 @@
 #
 # Available tags:
 #   always | all-apps | desktop | tools | graphics | media | development |
-#   productivity | communication | gaming | docker | virt | nocow | smb | gnome |
+#   productivity | communication | gaming | docker | virt | smb | gnome |
 #   firmware | fonts | shell | git-config | cleanup |
 #   backup | restore | flatpak-backup | flatpak-restore | rpm-backup | rpm-restore |
 #   niri  (never runs by default — opt-in: --tags niri)
@@ -66,11 +66,6 @@
     - name: "Pre | Load RPM config backup registry"
       ansible.builtin.include_vars:
         file: vars/rpm_configs.yml
-      tags: always
-
-    - name: "Pre | Load filesystem configuration"
-      ansible.builtin.include_vars:
-        file: vars/filesystem.yml
       tags: always
 
     - name: "Pre | Load niri / DankMaterialShell configuration"
@@ -117,7 +112,6 @@
         _changed_rpms:     []
         _changed_flatpaks: []
         _backup_results:   []
-        _nocow_results:    []
         _reboot_reasons:   []
       tags: always
 
@@ -169,9 +163,6 @@
     - name: "Include | KVM/QEMU virtualization stack"
       ansible.builtin.import_tasks: tasks/virtualization.yml
 
-    - name: "Include | noCOW directory setup"
-      ansible.builtin.import_tasks: tasks/nocow.yml
-
     - name: "Include | SMB share mounts"
       ansible.builtin.import_tasks: tasks/smb.yml
 
@@ -220,12 +211,6 @@
           {% endif %}
           {% if (_changed_rpms | length == 0) and (_changed_flatpaks | length == 0) %}
           All packages were already up to date — no changes made.
-          {% endif %}
-          {% if _nocow_results | length > 0 %}
-          [NOCOW DIRECTORIES]
-          {% for msg in _nocow_results %}
-            ✔  {{ msg }}
-          {% endfor %}
           {% endif %}
           {% if _backup_results | length > 0 %}
           [BACKUP / RESTORE]
