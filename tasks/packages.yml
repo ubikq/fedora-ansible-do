@@ -66,6 +66,22 @@
     - _syncthing_service_result.failed | default(false)
   tags: tools
 
+- name: "Packages [tools] | Enable and start sshd (required for Cockpit remote access)"
+  become: true
+  ansible.builtin.systemd:
+    name: sshd
+    enabled: true
+    state: started
+  register: _sshd_service_result
+  failed_when: false
+  tags: tools
+
+- name: "Packages [tools] | Record sshd service failure"
+  ansible.builtin.set_fact:
+    _run_errors: "{{ _run_errors + ['sshd could not be enabled — Cockpit remote access will not work. Fix manually: sudo systemctl enable --now sshd'] }}"
+  when: _sshd_service_result.failed | default(false)
+  tags: tools
+
 # ── Desktop ───────────────────────────────────────────────────────────────────
 - name: "Packages [desktop] | Install RPM packages"
   become: true
