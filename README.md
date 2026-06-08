@@ -132,8 +132,8 @@ ansible-playbook fedora-do.yml -K -J
 
 | Mode | How | Result |
 |---|---|---|
-| **Full run** | no `--tags` flag | Every task runs |
-| **Specific tasks only** | `--tags foo,bar` | Only tagged tasks run (`always` tasks run automatically in all modes) |
+| **Full run** | no `--tags` flag | Every task runs, except for the niri/dms installation and backup/restore |
+| **Specific tasks only** | `--tags "foo,bar"` | Only tagged tasks run (`always` tasks run automatically in all modes) |
 | **Full run, skip something** | `--skip-tags foo` | Everything runs except the skipped tag(s) |
 
 ### Tags
