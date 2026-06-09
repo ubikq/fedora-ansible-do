@@ -10,6 +10,7 @@
 
 - name: "Git | Configure global settings"
   tags: git-config
+  when: run_config.git_config | default(true)
   block:
     - name: "Git | Set user name"
       community.general.git_config:

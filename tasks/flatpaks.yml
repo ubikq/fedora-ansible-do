@@ -56,6 +56,7 @@
   loop: "{{ app_catalog.tools.flatpak | default([], true) }}"
   register: _fp_tools
   failed_when: false
+  when: run_config.apps_tools | default(true)
   tags: tools
 
 - name: "Flatpak [tools] | Track results"
@@ -77,6 +78,7 @@
   loop: "{{ app_catalog.desktop.flatpak | default([], true) }}"
   register: _fp_desktop
   failed_when: false
+  when: run_config.apps_desktop | default(true)
   tags: desktop
 
 - name: "Flatpak [desktop] | Track results"
@@ -98,6 +100,7 @@
   loop: "{{ app_catalog.development.flatpak | default([], true) }}"
   register: _fp_development
   failed_when: false
+  when: run_config.apps_development | default(true)
   tags: development
 
 - name: "Flatpak [development] | Track results"
@@ -119,6 +122,7 @@
   loop: "{{ app_catalog.productivity.flatpak | default([], true) }}"
   register: _fp_productivity
   failed_when: false
+  when: run_config.apps_productivity | default(true)
   tags: productivity
 
 - name: "Flatpak [productivity] | Track results"
@@ -136,7 +140,9 @@
   register: _lo_rpm_check
   changed_when: false
   failed_when: false
-  when: "'org.libreoffice.LibreOffice' in (app_catalog.productivity.flatpak | default([]))"
+  when:
+    - run_config.apps_productivity | default(true)
+    - "'org.libreoffice.LibreOffice' in (app_catalog.productivity.flatpak | default([]))"
   tags: productivity
 
 - name: "Flatpak [productivity] | Remove DNF LibreOffice when Flatpak version is catalogued"
@@ -144,6 +150,7 @@
   ansible.builtin.command:
     cmd: dnf remove -y 'libreoffice*'
   when:
+    - run_config.apps_productivity | default(true)
     - "'org.libreoffice.LibreOffice' in (app_catalog.productivity.flatpak | default([]))"
     - (_lo_rpm_check.stdout | default('')) | length > 0
   register: _lo_dnf_remove_result
@@ -170,6 +177,7 @@
   loop: "{{ app_catalog.communication.flatpak | default([], true) }}"
   register: _fp_communication
   failed_when: false
+  when: run_config.apps_communication | default(true)
   tags: communication
 
 - name: "Flatpak [communication] | Track results"
@@ -191,6 +199,7 @@
   loop: "{{ app_catalog.graphics.flatpak | default([], true) }}"
   register: _fp_graphics
   failed_when: false
+  when: run_config.apps_graphics | default(true)
   tags: graphics
 
 - name: "Flatpak [graphics] | Track results"
@@ -212,6 +221,7 @@
   loop: "{{ app_catalog.media.flatpak | default([], true) }}"
   register: _fp_media
   failed_when: false
+  when: run_config.apps_media | default(true)
   tags: media
 
 - name: "Flatpak [media] | Track results"
@@ -233,6 +243,7 @@
   loop: "{{ app_catalog.gaming.flatpak | default([], true) }}"
   register: _fp_gaming
   failed_when: false
+  when: run_config.apps_gaming | default(false)
   tags: gaming
 
 - name: "Flatpak [gaming] | Track results"
@@ -263,7 +274,7 @@
   when: app_catalog[item].flatpak | default([], true) | length > 0
   register: _all_apps_flatpak
   failed_when: false
-  tags: all-apps
+  tags: [never, all-apps]
 
 - name: "Flatpak [all-apps] | Track results"
   ansible.builtin.set_fact:
@@ -271,4 +282,4 @@
   loop: "{{ _all_apps_flatpak.results | default([]) }}"
   loop_control:
     label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
-  tags: all-apps
+  tags: [never, all-apps]

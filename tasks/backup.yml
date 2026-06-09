@@ -4,17 +4,15 @@
 # =============================================================================
 # Backs up and restores Flatpak and RPM application configuration.
 # Paths and retention are configured in vars/backup.yml.
-# RPM config entries are declared in vars/rpm_configs.yml.
+# RPM config entries are declared in vars/config_registry.yml.
 #
 # Prerequisites: rsync must be installed (included in the 'base' category).
 #
-# TAGS (all tagged 'never' — only run when explicitly requested):
-#   backup          →  run both Flatpak and RPM backup
-#   restore         →  run both Flatpak and RPM restore
-#   flatpak-backup  →  Flatpak config backup only
-#   flatpak-restore →  Flatpak config restore only
-#   rpm-backup      →  RPM config backup only
-#   rpm-restore     →  RPM config restore only
+# TAGS:
+#   backup / flatpak-backup / rpm-backup   → tagged 'never', explicit --tags only
+#   restore / flatpak-restore / rpm-restore → run when run_config.restore is true,
+#                                             or explicitly with --tags restore
+#                                             (override flag: -e "run_config={restore: true}")
 #
 # NOTE: tags must appear on the include_tasks statements themselves, not only
 # inside the included files. include_tasks is dynamic — Ansible cannot see
@@ -26,10 +24,12 @@
   tags: [never, backup, flatpak-backup]
 
 - ansible.builtin.include_tasks: backup/flatpak-restore.yml
-  tags: [never, restore, flatpak-restore]
+  tags: [restore, flatpak-restore]
+  when: run_config.restore | default(false)
 
 - ansible.builtin.include_tasks: backup/rpm-backup.yml
   tags: [never, backup, rpm-backup]
 
 - ansible.builtin.include_tasks: backup/rpm-restore.yml
-  tags: [never, restore, rpm-restore]
+  tags: [restore, rpm-restore]
+  when: run_config.restore | default(false)

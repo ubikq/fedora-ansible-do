@@ -8,6 +8,7 @@
 
 - name: "Firmware | Refresh and apply firmware updates"
   tags: firmware
+  when: run_config.firmware | default(true)
   block:
     - name: "Firmware | Refresh firmware metadata"
       become: true

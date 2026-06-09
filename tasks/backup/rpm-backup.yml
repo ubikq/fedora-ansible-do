@@ -2,7 +2,7 @@
 # =============================================================================
 # tasks/backup/rpm-backup.yml — RPM Application Configuration Backup
 # =============================================================================
-# Config entries declared in vars/rpm_configs.yml.
+# Config entries declared in vars/config_registry.yml.
 # Tags: backup, rpm-backup  (never runs automatically)
 # =============================================================================
 
@@ -96,7 +96,7 @@
         state: directory
         mode: '0755'
       when: >-
-        rpm_configs.values()
+        config_registry.values()
         | selectattr('files', 'defined')
         | map(attribute='files')
         | flatten
@@ -109,7 +109,7 @@
       changed_when: true
       failed_when: false
       when: >-
-        rpm_configs.values()
+        config_registry.values()
         | selectattr('files', 'defined')
         | map(attribute='files')
         | flatten
@@ -119,7 +119,7 @@
     - name: "RPM Backup | Validate package names"  # noqa: command-instead-of-module
       ansible.builtin.command:
         cmd: "rpm -q {{ item.key }}"
-      loop: "{{ rpm_configs | dict2items }}"
+      loop: "{{ config_registry | dict2items }}"
       loop_control:
         label: "{{ item.key }}"
       register: _rb_pkg_check
@@ -131,7 +131,7 @@
       ansible.builtin.set_fact:
         _run_errors: >-
           {{ _run_errors + ['RPM backup: \'' + item.item.key
-             + '\' is not installed — entry in vars/rpm_configs.yml may be misspelled'] }}
+             + '\' is not installed — entry in vars/config_registry.yml may be misspelled'] }}
       loop: "{{ _rb_pkg_check.results | default([]) }}"
       loop_control:
         label: "{{ item.item.key }}"
@@ -140,7 +140,7 @@
     - name: "RPM Backup | Stat config paths"
       ansible.builtin.stat:
         path: "{{ item.1 | replace('~', ansible_facts.user_dir) }}"
-      loop: "{{ rpm_configs | dict2items | subelements('value.paths') }}"
+      loop: "{{ config_registry | dict2items | subelements('value.paths') }}"
       loop_control:
         label: "{{ item.0.key }}: {{ item.1 }}"
       register: _rb_path_stats
@@ -149,7 +149,7 @@
     - name: "RPM Backup | Stat individual config files"
       ansible.builtin.stat:
         path: "{{ item.1 | replace('~', ansible_facts.user_dir) }}"
-      loop: "{{ rpm_configs | dict2items | subelements('value.files', skip_missing=True) }}"
+      loop: "{{ config_registry | dict2items | subelements('value.files', skip_missing=True) }}"
       loop_control:
         label: "{{ item.0.key }}: {{ item.1 }}"
       register: _rb_file_stats
@@ -184,8 +184,8 @@
       ansible.builtin.set_fact:
         _run_errors: >-
           {{ _run_errors + ['RPM backup: no config found for \'' + item.key
-             + '\' — check paths in vars/rpm_configs.yml'] }}
-      loop: "{{ rpm_configs | dict2items }}"
+             + '\' — check paths in vars/config_registry.yml'] }}
+      loop: "{{ config_registry | dict2items }}"
       loop_control:
         label: "{{ item.key }}"
       when: item.key not in _rb_packages_with_config

@@ -9,6 +9,7 @@
 
 - name: "Virt | KVM, QEMU and libvirt setup"
   tags: virt
+  when: run_config.virtualization | default(true)
   block:
     - name: "Virt | Install virtualization group"
       become: true

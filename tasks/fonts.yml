@@ -22,6 +22,7 @@
     - cascadia-code-fonts
   register: _fonts_result
   failed_when: false
+  when: run_config.fonts | default(true)
   tags: fonts
 
 - name: "Fonts | Track results"

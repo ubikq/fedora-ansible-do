@@ -1,0 +1,55 @@
+---
+# =============================================================================
+# vars/run_config.yml — Default Run Configuration
+# =============================================================================
+# Controls which task groups run during a default playbook execution
+# (ansible-playbook fedora-do.yml -K -J with no --tags flag).
+#
+# Set a flag to false to skip that group on a default run.
+# Set niri or restore to true to include those opt-in groups in a default run.
+#
+# Note: --tags / --skip-tags still work for targeted ad-hoc runs, but a
+# flag set to false here will also suppress tasks when that tag is used
+# explicitly. To temporarily override: -e "run_config={niri: true}"
+# =============================================================================
+
+run_config:
+
+  # ── System ──────────────────────────────────────────────────────────────────
+  system_update: true   # DNF tuning (/etc/dnf/dnf.conf) + dnf upgrade --refresh
+  rpm_fusion:    true   # RPM Fusion free + nonfree repos, FFmpeg, @multimedia codecs
+  firmware:      true   # fwupdmgr metadata refresh + firmware updates
+
+  # ── Applications ────────────────────────────────────────────────────────────
+  apps_tools:         true   # CLI tools, Cockpit, Syncthing, doublecmd, pavucontrol, etc.
+  apps_desktop:       true   # GNOME Tweaks, dconf Editor, PeaZip, Extension Manager
+  apps_development:   true   # VS Code (RPM, via Microsoft repo)
+  apps_productivity:  true   # LibreOffice, TickTick, Bitwarden, Obsidian, Actual Budget, etc.
+  apps_communication: true   # Brave Browser (RPM), Vivaldi, Floorp, Chrome
+  apps_graphics:      true   # nomacs, Krita, FreeCAD
+  apps_media:         true   # mpv, Haruna, Jellyfin Desktop, HandBrake, yt-dlp
+  apps_gaming:        false  # Reserved — no active apps
+
+  # ── System Services ─────────────────────────────────────────────────────────
+  docker:        true   # Docker CE + Compose plugin + docker service + user group
+  virtualization: true  # KVM/QEMU, @virtualization group, libvirtd, libvirt/kvm groups
+  smb:           true   # SMB/CIFS credential files, fstab entries, mount operations
+
+  # ── Desktop Environment ──────────────────────────────────────────────────────
+  gnome:      true   # GNOME dconf settings (dark mode, Dash-to-Dock, Night Light, etc.)
+  fonts:      true   # Noto, Roboto, JetBrains Mono, Fira Code, Cascadia Code + fc-cache
+  shell:      true   # fish shell + Fisher + Tide + starship prompt
+  git_config: true   # Git user.name/email, default branch, GNOME Keyring credential helper
+
+  # ── Compositor (opt-in — set true to include in a default run) ──────────────
+  niri: false   # Niri compositor + DankMaterialShell
+
+  # ── Restore (opt-in — set true to include in a default run) ─────────────────
+  restore: false   # Restore backed-up Flatpak + RPM app configs from SMB share
+
+  # ── Maintenance ──────────────────────────────────────────────────────────────
+  cleanup: true   # dnf autoremove, dnf clean packages, flatpak update
+
+  # ── Backup ──────────────────────────────────────────────────────────────────
+  # Backup is intentionally omitted — run explicitly when needed:
+  #   ansible-playbook fedora-do.yml -K -J --tags backup

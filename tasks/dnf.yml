@@ -5,6 +5,7 @@
 
 - name: "DNF | Optimise /etc/dnf/dnf.conf"
   tags: always
+  when: run_config.system_update | default(true)
   block:
     - name: "DNF | Apply dnf.conf options"
       become: true
@@ -22,6 +23,7 @@
 
 - name: "DNF | Full system update"
   tags: always
+  when: run_config.system_update | default(true)
   block:
     - name: "DNF | Full system update"
       become: true

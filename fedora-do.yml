@@ -9,7 +9,7 @@
 #
 # Run modes:  (-K = --ask-become-pass,  -J = --ask-vault-pass)
 #
-#   1. FULL RUN — no --tags flag; everything runs:
+#   1. FULL RUN — no --tags flag; groups run according to vars/run_config.yml:
 #        ansible-playbook fedora-do.yml -K -J
 #
 #   2. SPECIFIC TASKS ONLY — only the listed tags run (plus always):
@@ -21,12 +21,17 @@
 #        ansible-playbook fedora-do.yml -K --skip-tags gaming
 #        ansible-playbook fedora-do.yml -K --skip-tags "virt,firmware"
 #
+#   4. OVERRIDE run_config FLAG — e.g. to run niri when run_config.niri is false:
+#        ansible-playbook fedora-do.yml -K -e "run_config={niri: true}" --tags niri
+#
 # Available tags:
 #   always | all-apps | desktop | tools | graphics | media | development |
 #   productivity | communication | gaming | docker | virt | smb | gnome |
 #   firmware | fonts | shell | git-config | cleanup |
 #   backup | restore | flatpak-backup | flatpak-restore | rpm-backup | rpm-restore |
-#   niri  (never runs by default — opt-in: --tags niri)
+#   niri
+#
+# Default run behaviour is configured in vars/run_config.yml
 # =============================================================================
 
 - name: Fedora Workstation Setup
@@ -63,9 +68,14 @@
         file: vars/backup.yml
       tags: always
 
-    - name: "Pre | Load RPM config backup registry"
+    - name: "Pre | Load config backup registry"
       ansible.builtin.include_vars:
-        file: vars/rpm_configs.yml
+        file: vars/config_registry.yml
+      tags: always
+
+    - name: "Pre | Load run configuration"
+      ansible.builtin.include_vars:
+        file: vars/run_config.yml
       tags: always
 
     - name: "Pre | Load niri / DankMaterialShell configuration"

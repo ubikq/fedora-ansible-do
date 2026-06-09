@@ -10,6 +10,7 @@
 # ── RPM Fusion + multimedia (grouped: FFmpeg/codecs depend on RPM Fusion) ─────
 - name: "Repos | RPM Fusion and multimedia setup"
   tags: always
+  when: run_config.rpm_fusion | default(true)
   block:
     - name: "Repos | Enable RPM Fusion Free"
       become: true

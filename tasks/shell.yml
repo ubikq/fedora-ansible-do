@@ -10,6 +10,7 @@
 # ── fish + Fisher + Tide ──────────────────────────────────────────────────────
 - name: "Shell | fish, Fisher and Tide setup"
   tags: shell
+  when: run_config.shell | default(true)
   block:
     - name: "Shell | Install fish"
       become: true

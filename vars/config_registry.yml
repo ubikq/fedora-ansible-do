@@ -1,10 +1,12 @@
 ---
 # =============================================================================
-# vars/rpm_configs.yml — RPM Application Configuration Backup Registry
+# vars/config_registry.yml — Application Configuration Backup Registry
 # =============================================================================
 # Declares which applications have configuration worth backing up and where
 # those configuration directories live. Only entries listed here are included
 # in the rpm-backup / rpm-restore operations.
+# Covers RPM packages, Flatpak overrides, AppImages, and other non-RPM configs
+# (fish shell, GNOME desktop, niri/DMS, pipewire) — all managed uniformly.
 #
 # Entry format:
 #   <label>:
@@ -25,7 +27,7 @@
 #     yet launched or that create config on first use).
 # =============================================================================
 
-rpm_configs:
+config_registry:
 
   # ── Base ──────────────────────────────────────────────────────────────────────
   # (no RPM packages with persistent configuration)
@@ -118,3 +120,11 @@ rpm_configs:
     no_package_check: true
     paths:
       - ~/Shutter Encoder
+
+  # Config stereo upscaling for youtube audio through 5.1 back speakers
+  pipewire-config-51:
+    no_package_check: true
+    paths: []
+    files:
+      - ~/.config/pipewire/pipewire-pulse.conf.d/40-youtube-upmix.conf
+

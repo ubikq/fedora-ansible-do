@@ -5,6 +5,7 @@
 
 - name: "Docker | Repository and service setup"
   tags: docker
+  when: run_config.docker | default(true)
   block:
     - name: "Docker | Gather installed package facts"
       ansible.builtin.package_facts:

@@ -37,6 +37,7 @@
   loop: "{{ app_catalog.tools.rpm | default([], true) }}"
   register: _pkg_tools
   failed_when: false
+  when: run_config.apps_tools | default(true)
   tags: tools
 
 - name: "Packages [tools] | Track results"
@@ -53,7 +54,9 @@
     name: syncthing
     enabled: true
     scope: user
-  when: "'syncthing' in (app_catalog.tools.rpm | default([]))"
+  when:
+    - run_config.apps_tools | default(true)
+    - "'syncthing' in (app_catalog.tools.rpm | default([]))"
   register: _syncthing_service_result
   failed_when: false
   tags: tools
@@ -74,6 +77,7 @@
     state: started
   register: _sshd_service_result
   failed_when: false
+  when: run_config.apps_tools | default(true)
   tags: tools
 
 - name: "Packages [tools] | Record sshd service failure"
@@ -91,6 +95,7 @@
   loop: "{{ app_catalog.desktop.rpm | default([], true) }}"
   register: _pkg_desktop
   failed_when: false
+  when: run_config.apps_desktop | default(true)
   tags: desktop
 
 - name: "Packages [desktop] | Track results"
@@ -111,6 +116,7 @@
   loop: "{{ app_catalog.development.rpm | default([], true) }}"
   register: _pkg_development
   failed_when: false
+  when: run_config.apps_development | default(true)
   tags: development
 
 - name: "Packages [development] | Track results"
@@ -131,6 +137,7 @@
   loop: "{{ app_catalog.productivity.rpm | default([], true) }}"
   register: _pkg_productivity
   failed_when: false
+  when: run_config.apps_productivity | default(true)
   tags: productivity
 
 - name: "Packages [productivity] | Track results"
@@ -151,6 +158,7 @@
   loop: "{{ app_catalog.communication.rpm | default([], true) }}"
   register: _pkg_communication
   failed_when: false
+  when: run_config.apps_communication | default(true)
   tags: communication
 
 - name: "Packages [communication] | Track results"
@@ -171,6 +179,7 @@
   loop: "{{ app_catalog.graphics.rpm | default([], true) }}"
   register: _pkg_graphics
   failed_when: false
+  when: run_config.apps_graphics | default(true)
   tags: graphics
 
 - name: "Packages [graphics] | Track results"
@@ -191,6 +200,7 @@
   loop: "{{ app_catalog.media.rpm | default([], true) }}"
   register: _pkg_media
   failed_when: false
+  when: run_config.apps_media | default(true)
   tags: media
 
 - name: "Packages [media] | Track results"
@@ -211,6 +221,7 @@
   loop: "{{ app_catalog.gaming.rpm | default([], true) }}"
   register: _pkg_gaming
   failed_when: false
+  when: run_config.apps_gaming | default(false)
   tags: gaming
 
 - name: "Packages [gaming] | Track results"
@@ -240,7 +251,7 @@
   when: app_catalog[item].rpm | default([], true) | length > 0
   register: _all_apps_rpm
   failed_when: false
-  tags: all-apps
+  tags: [never, all-apps]
 
 - name: "Packages [all-apps] | Track results"
   ansible.builtin.set_fact:
@@ -248,4 +259,4 @@
   loop: "{{ _all_apps_rpm.results | default([]) }}"
   loop_control:
     label: "{{ ('\x1b[1;31m⚠ FAILED: ' + item.item + '\x1b[0m') if (item.rc | default(0) != 0) else (item.item | default('')) }}"
-  tags: all-apps
+  tags: [never, all-apps]

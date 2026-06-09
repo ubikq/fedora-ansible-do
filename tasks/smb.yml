@@ -23,12 +23,16 @@
       {{ _run_errors + ['SMB mounts skipped — vars/secrets.yml not found or'
          + ' not decrypted. Create it from vars/secrets.yml.template,'
          + ' add credentials, then run: ansible-vault encrypt vars/secrets.yml'] }}
-  when: smb_credentials is not defined
+  when:
+    - run_config.smb | default(true)
+    - smb_credentials is not defined
   tags: [smb, backup, restore, flatpak-backup, flatpak-restore, rpm-backup, rpm-restore]
 
 # ── SMB setup (skipped when credentials are unavailable) ─────────────────────
 - name: "SMB | Configure shares"
-  when: smb_credentials is defined
+  when:
+    - run_config.smb | default(true)
+    - smb_credentials is defined
   tags: [smb, backup, restore, flatpak-backup, flatpak-restore, rpm-backup, rpm-restore]
   block:
     - name: "SMB | Ensure cifs-utils is installed"

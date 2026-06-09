@@ -2,13 +2,13 @@
 # =============================================================================
 # tasks/backup/flatpak-restore.yml — Flatpak Configuration Restore
 # =============================================================================
-# Tags: restore, flatpak-restore  (never runs automatically)
+# Tags: restore, flatpak-restore  (runs automatically when run_config.restore: true)
 # =============================================================================
 
 - name: "Flatpak Restore | Check SMB credentials are available"
   ansible.builtin.set_fact:
     _restore_creds_ok: "{{ smb_credentials is defined }}"
-  tags: [never, restore, flatpak-restore]
+  tags: [restore, flatpak-restore]
 
 - name: "Flatpak Restore | Record skipped restore — no SMB credentials"
   ansible.builtin.set_fact:
@@ -16,7 +16,7 @@
       {{ _run_errors + ['Flatpak restore skipped — SMB credentials not available.'
          + ' Create vars/secrets.yml from vars/secrets.yml.template first'] }}
   when: not _restore_creds_ok
-  tags: [never, restore, flatpak-restore]
+  tags: [restore, flatpak-restore]
 
 - name: "Flatpak Restore | Resolve SMB mount point"
   ansible.builtin.set_fact:
@@ -30,21 +30,21 @@
          | first
          | default(flatpak_backup_base_dir | replace('~', ansible_facts.user_dir) | dirname) }}
   when: _restore_creds_ok
-  tags: [never, restore, flatpak-restore]
+  tags: [restore, flatpak-restore]
 
 - name: "Flatpak Restore | Stat mount point"
   ansible.builtin.stat:
     path: "{{ _restore_check_path }}"
   register: _restore_share_stat
   when: _restore_creds_ok
-  tags: [never, restore, flatpak-restore]
+  tags: [restore, flatpak-restore]
 
 - name: "Flatpak Restore | Stat home directory"
   ansible.builtin.stat:
     path: "{{ ansible_facts.user_dir }}"
   register: _restore_home_stat
   when: _restore_creds_ok
-  tags: [never, restore, flatpak-restore]
+  tags: [restore, flatpak-restore]
 
 - name: "Flatpak Restore | Check share is mounted"
   ansible.builtin.set_fact:
@@ -52,7 +52,7 @@
       {{ _restore_share_stat.stat.exists | default(false)
          and _restore_share_stat.stat.dev != _restore_home_stat.stat.dev }}
   when: _restore_creds_ok
-  tags: [never, restore, flatpak-restore]
+  tags: [restore, flatpak-restore]
 
 - name: "Flatpak Restore | Record skipped restore — share not mounted"
   ansible.builtin.set_fact:
@@ -60,10 +60,10 @@
       {{ _run_errors + ['Flatpak restore skipped — backup share not mounted at '
          + flatpak_backup_base_dir + '. Check NAS connectivity and SMB credentials'] }}
   when: _restore_creds_ok and not (_restore_mount_ok | default(false))
-  tags: [never, restore, flatpak-restore]
+  tags: [restore, flatpak-restore]
 
 - name: "Flatpak Restore | Run"
-  tags: [never, restore, flatpak-restore]
+  tags: [restore, flatpak-restore]
   when: (_restore_creds_ok | default(false)) and (_restore_mount_ok | default(false))
   block:
     - name: "Flatpak Restore | Set run variables"

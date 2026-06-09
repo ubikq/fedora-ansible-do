@@ -2,13 +2,15 @@
 # =============================================================================
 # tasks/niri.yml — Niri Compositor + DankMaterialShell
 # =============================================================================
-# Opt-in only — none of these tasks run unless --tags niri is specified.
-# Usage:  ansible-playbook fedora-do.yml -K --tags niri
+# Opt-in — controlled by run_config.niri in vars/run_config.yml (default: false).
+# To include in a default run: set run_config.niri: true in vars/run_config.yml
+# To run standalone: ansible-playbook fedora-do.yml -K -e "run_config={niri: true}" --tags niri
 # =============================================================================
 
 # ── RPM packages ──────────────────────────────────────────────────────────────
 - name: "Niri | Install compositor and Wayland support packages"
-  tags: [never, niri]
+  tags: niri
+  when: run_config.niri | default(false)
   block:
     - name: "Niri | Install niri and xwayland-satellite"
       become: true
@@ -39,7 +41,8 @@
 
 # ── DankMaterialShell ─────────────────────────────────────────────────────────
 - name: "Niri | Install DankMaterialShell"
-  tags: [never, niri]
+  tags: niri
+  when: run_config.niri | default(false)
   block:
     - name: "Niri | Enable DMS COPR repository"
       become: true
@@ -71,7 +74,8 @@
 
 # ── DMS configuration ─────────────────────────────────────────────────────────
 - name: "Niri | Deploy DMS settings.json"
-  tags: [never, niri]
+  tags: niri
+  when: run_config.niri | default(false)
   block:
     - name: "Niri | Ensure DankMaterialShell config directory exists"
       ansible.builtin.file:
@@ -95,7 +99,8 @@
 
 # ── niri configuration ────────────────────────────────────────────────────────
 - name: "Niri | Check if syncthingtray flatpak is installed"
-  tags: [never, niri]
+  tags: niri
+  when: run_config.niri | default(false)
   ansible.builtin.command:
     cmd: "flatpak info {{ niri_syncthingtray_flatpak }}"
   register: _niri_syncthingtray_check
@@ -103,7 +108,8 @@
   failed_when: false
 
 - name: "Niri | Deploy config.kdl"
-  tags: [never, niri]
+  tags: niri
+  when: run_config.niri | default(false)
   block:
     - name: "Niri | Ensure niri config directory exists"
       ansible.builtin.file:

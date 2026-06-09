@@ -6,6 +6,7 @@
 - [Disclaimer](#-disclaimer)
 - [Project Structure](#project-structure)
 - [Quick Start](#quick-start)
+- [Run Configuration](#run-configuration)
 - [Tag Reference](#tag-reference)
 - [Adding Applications](#adding-applications)
 - [SMB Shares](#smb-shares)
@@ -17,23 +18,25 @@
 
 ## About This Project
 
-This Ansible playbook automates the post-install configuration of Fedora Workstation, systematically transforming a stock setup into a fully provisioned environment. To keep the project clean and maintainable, all application lists are centralized in a single file (`vars/app_catalog.yml`), while the logic is organized into dedicated task and variable files. 
+This Ansible playbook automates the post-install configuration of Fedora Workstation, systematically transforming a stock setup into a fully provisioned environment. All application lists are centralized in `vars/app_catalog.yml`, and **which task groups run during a default execution is controlled by a single vars file** — `vars/run_config.yml` — making it straightforward to include or exclude features without needing to understand Ansible's tag system.
 
 ### Features
 
+- **Configurable Default Run**: A single file — `vars/run_config.yml` — controls which task groups are included in a default playbook run. Set any flag to `false` to skip that group (e.g. exclude SMB mounts or RPM Fusion); set `niri` or `restore` to `true` to include those opt-in groups automatically. No `--tags` knowledge required. See [Run Configuration](#run-configuration).
+
 - **System Maintenance & Upgrades**: Automates the standard system update cycle (`dnf upgrade`), manages official Fedora repositories, and handles package cleanup tasks.
-    
-- **Third-Party Repository Integration**: Safely provisions third-party repositories—specifically enabling **RPM Fusion** (`free` and `nonfree`) to seamlessly unlock restricted media codecs and proprietary hardware drivers (such as Nvidia graphics drivers).
-    
+
+- **Third-Party Repository Integration**: Safely provisions third-party repositories—specifically enabling **RPM Fusion** (`free` and `nonfree`) to seamlessly unlock restricted media codecs and proprietary hardware drivers (such as Nvidia graphics drivers). Can be excluded via `run_config.rpm_fusion: false`.
+
 - **Core Software & Tool Deployment**: Orchestrates the bulk installation of applications, system utilities, and developer dependencies via native package management (`dnf`), eliminating manual setup.
-    
+
 - **Flatpak Integration**: Configures Flatpak functionality and enables the **Flathub repository**, laying down the framework to install sandbox-isolated desktop applications.
-    
+
 - **User Environment Personalization**: Deploys localized dotfiles, system preferences, shell configurations, and workflow tools to match a specific user's desktop routine.
 
-- **Configuration Backup & Restore** (opt-in — excluded from a default run): Backs up and restores application configuration to and from a network share, covering both Flatpak and RPM-installed applications. Maintains dated archives, a rolling latest snapshot, and optional monthly snapshots with configurable retention. These tasks **never run automatically** — they must be triggered explicitly with `--tags backup` or `--tags restore`. See the [Backup & Restore](#backup--restore) section for details.
+- **Configuration Backup & Restore**: Backs up and restores application configuration to and from a network share, covering both Flatpak and RPM-installed applications. Maintains dated archives, a rolling latest snapshot, and optional monthly snapshots with configurable retention. **Backup never runs automatically** and must be triggered explicitly with `--tags backup`. **Restore** can be included in a default run by setting `run_config.restore: true` in `vars/run_config.yml`. See the [Backup & Restore](#backup--restore) section for details.
 
-- **Niri Compositor & DankMaterialShell** (opt-in — excluded from a default run): Installs the niri scrolling tiling Wayland compositor alongside the DankMaterialShell desktop shell. Must be triggered explicitly with `--tags niri`. A default `config.kdl` with customized keybindings is deployed on first run as a ready-to-use starting point for customization. Once personalized, the configuration can be backed up and restored across fresh installations using the playbook's built-in backup system.
+- **Niri Compositor & DankMaterialShell** (opt-in): Installs the niri scrolling tiling Wayland compositor alongside the DankMaterialShell desktop shell. Excluded from a default run unless `run_config.niri: true` is set in `vars/run_config.yml`. A default `config.kdl` with customized keybindings is deployed on first run as a ready-to-use starting point for customization. Once personalized, the configuration can be backed up and restored across fresh installations using the playbook's built-in backup system.
 
 ### Feature Roadmap
 
@@ -68,11 +71,12 @@ fedora-ansible-do/
 ├── .gitignore
 │
 ├── vars/
+│   ├── run_config.yml          ← ✏️  Edit this to control which groups run by default
 │   ├── app_catalog.yml         ← ✏️  Edit this to add/remove apps (RPM + Flatpak)
 │   ├── gnome.yml               ← ✏️  Edit this for GNOME dconf settings
 │   ├── smb.yml                 ← ✏️  Edit this for SMB share definitions
 │   ├── backup.yml              ← ✏️  Edit this for backup/restore paths and retention
-│   ├── rpm_configs.yml         ← ✏️  Edit this to add/remove RPM config backup entries
+│   ├── config_registry.yml     ← ✏️  Edit this to add/remove config backup entries (RPM, Flatpak overrides, etc.)
 │   ├── git.yml.template        ← Copy → vars/git.yml, fill in (not committed)
 │   └── secrets.yml.template    ← Copy → vars/secrets.yml, fill in, vault-encrypt
 │
@@ -86,6 +90,7 @@ fedora-ansible-do/
     ├── virtualization.yml      ← KVM/QEMU/libvirt stack
     ├── smb.yml                 ← Credential files + fstab mounts
     ├── gnome.yml               ← dconf settings + extensions
+    ├── niri.yml                ← Niri compositor + DankMaterialShell (opt-in)
     ├── fonts.yml               ← System font installation + fc-cache
     ├── shell.yml               ← fish shell + starship prompt
     ├── git-config.yml          ← Git globals + GNOME Keyring credential helper
@@ -109,20 +114,93 @@ The following is required to use the runbook post-installation of the base OS.
 sudo dnf install ansible python3-psutil
 ansible-galaxy collection install community.general ansible.posix
 
-# 2. Set up Git identity
+# 2. Review and adjust which groups run by default
+# Edit vars/run_config.yml — enable niri, restore, or disable groups you don't need
+
+# 3. Set up Git identity
 cp vars/git.yml.template vars/git.yml
 # Edit vars/git.yml with your name and email (this file is gitignored)
 
-# 3. Set up secrets for SMB mounts
+# 4. Set up secrets for SMB mounts
 cp vars/secrets.yml.template vars/secrets.yml
 # Edit vars/secrets.yml with real credentials, then encrypt:
 ansible-vault encrypt vars/secrets.yml
 
-# 4. Run the full setup (no --tags = everything runs)
+# 5. Run the full setup (no --tags = groups run per vars/run_config.yml)
 ansible-playbook fedora-do.yml -K -J
 
-# 5. Log out and back in (or reboot)
+# 6. Log out and back in (or reboot)
 ```
+
+---
+
+## Run Configuration
+
+Edit **`vars/run_config.yml`** to control which task groups run during a default playbook execution (no `--tags` flag).
+
+```yaml
+run_config:
+
+  # ── System ──────────────────────────────────────────────────────────────────
+  system_update: true   # DNF tuning + dnf upgrade --refresh
+  rpm_fusion:    true   # RPM Fusion repos, FFmpeg, @multimedia codecs
+  firmware:      true   # fwupdmgr firmware updates
+
+  # ── Applications ────────────────────────────────────────────────────────────
+  apps_tools:         true
+  apps_desktop:       true
+  apps_development:   true
+  apps_productivity:  true
+  apps_communication: true
+  apps_graphics:      true
+  apps_media:         true
+  apps_gaming:        false  # reserved — no active apps
+
+  # ── System Services ─────────────────────────────────────────────────────────
+  docker:         true
+  virtualization: true
+  smb:            true
+
+  # ── Desktop Environment ──────────────────────────────────────────────────────
+  gnome:      true
+  fonts:      true
+  shell:      true
+  git_config: true
+
+  # ── Opt-in (set true to include in a default run) ────────────────────────────
+  niri:    false   # Niri compositor + DankMaterialShell
+  restore: false   # Restore backed-up app configs from SMB share
+
+  # ── Maintenance ──────────────────────────────────────────────────────────────
+  cleanup: true
+```
+
+### Common scenarios
+
+**Full setup including niri/DMS and config restore in a single run:**
+```bash
+# Set in vars/run_config.yml:
+#   niri: true
+#   restore: true
+ansible-playbook fedora-do.yml -K -J
+```
+
+**Minimal setup — skip SMB, RPM Fusion, and gaming:**
+```bash
+# Set in vars/run_config.yml:
+#   rpm_fusion: false
+#   smb: false
+#   apps_gaming: false   (already false by default)
+ansible-playbook fedora-do.yml -K
+```
+
+**Override a flag on the command line without editing the vars file:**
+```bash
+# Run niri setup when run_config.niri is false
+ansible-playbook fedora-do.yml -K -e "run_config={niri: true}" --tags niri
+```
+
+> **Note:** A flag set to `false` in `run_config.yml` will also suppress the group when that tag is used explicitly via `--tags`. Use the `-e` override above for ad-hoc runs of disabled groups.
 
 ---
 
@@ -132,7 +210,7 @@ ansible-playbook fedora-do.yml -K -J
 
 | Mode | How | Result |
 |---|---|---|
-| **Full run** | no `--tags` flag | Every task runs, except for the niri/dms installation and backup/restore |
+| **Full run** | no `--tags` flag | Groups run according to `vars/run_config.yml` (see [Run Configuration](#run-configuration)) |
 | **Specific tasks only** | `--tags "foo,bar"` | Only tagged tasks run (`always` tasks run automatically in all modes) |
 | **Full run, skip something** | `--skip-tags foo` | Everything runs except the skipped tag(s) |
 
@@ -140,7 +218,7 @@ ansible-playbook fedora-do.yml -K -J
 
 | Tag | What it covers |
 |---|---|
-| `always` | DNF tune, system update, RPM Fusion, FFmpeg, base packages, Flathub setup — runs in all modes |
+| `always` | DNF tune, system update, base packages, Flathub setup — runs in all modes (RPM Fusion and other groups are controlled by `run_config.yml`) |
 | `all-apps` | Shortcut: installs every app category at once (tools through gaming) |
 | `tools` | btrfs-assistant, eza, bat, fzf, fastfetch, tldr, restic, syncthing, doublecmd-qt6, pavucontrol, Cockpit plugins + Bazaar, Warehouse, Flatseal, GearLever, Dolphin, Meld, FSearch, CockpitClient, Solaar |
 | `desktop` | GNOME Tweaks, dconf Editor + PeaZip, Extension Manager |
@@ -159,13 +237,13 @@ ansible-playbook fedora-do.yml -K -J
 | `shell` | fish shell (set as default) + Fisher + Tide + starship prompt |
 | `git-config` | Git identity, default branch, GNOME Keyring credential helper |
 | `cleanup` | dnf autoremove, cache clean, Flatpak updates — runs on full run or `--tags cleanup` |
-| `niri` | niri compositor + DankMaterialShell — **never auto-runs**, opt-in only |
-| `backup` | Run both Flatpak and RPM config backup (never runs automatically) |
-| `restore` | Run both Flatpak and RPM config restore (never runs automatically) |
+| `niri` | niri compositor + DankMaterialShell — excluded from default run unless `run_config.niri: true`; use `-e "run_config={niri: true}"` to run standalone |
+| `backup` | Run both Flatpak and RPM config backup — **never runs automatically**, must be explicitly tagged |
+| `restore` | Run both Flatpak and RPM config restore — runs automatically when `run_config.restore: true`, or explicitly with `--tags restore` |
 | `flatpak-backup` | Flatpak config backup only (`~/.var/app` → SMB share) |
 | `flatpak-restore` | Flatpak config restore only (SMB share → `~/.var/app`) |
-| `rpm-backup` | RPM app config backup only (paths from `vars/rpm_configs.yml` → SMB share) |
-| `rpm-restore` | RPM app config restore only (SMB share → home paths per `vars/rpm_configs.yml`) |
+| `rpm-backup` | RPM app config backup only (paths from `vars/config_registry.yml` → SMB share) |
+| `rpm-restore` | RPM app config restore only (SMB share → home paths per `vars/config_registry.yml`) |
 
 > **Tip:** To see all available tags without running the playbook:
 > ```bash
@@ -179,7 +257,7 @@ ansible-playbook fedora-do.yml -K -J
 > `-J` = `--ask-vault-pass` (vault password prompt)
 
 ```bash
-# ── Mode 1: full run (no --tags = everything) ─────────────────────────────────
+# ── Mode 1: full run (no --tags = groups run per vars/run_config.yml) ─────────
 ansible-playbook fedora-do.yml -K -J
 
 # ── Mode 2: specific tasks only ───────────────────────────────────────────────
@@ -208,11 +286,12 @@ ansible-playbook fedora-do.yml -K --skip-tags gaming
 # Everything except virtualisation and firmware
 ansible-playbook fedora-do.yml -K --skip-tags "virt,firmware"
 
-# ── Backup & restore (never run automatically — must be explicitly tagged) ────
+# ── Backup (never runs automatically — must be explicitly tagged) ─────────────
 # Back up both Flatpak and RPM app configs
 ansible-playbook fedora-do.yml -K -J --tags backup
 
-# Restore both Flatpak and RPM app configs (run after a fresh install)
+# ── Restore (runs automatically when run_config.restore: true) ────────────────
+# Restore both Flatpak and RPM app configs (explicitly tagged)
 ansible-playbook fedora-do.yml -K -J --tags restore
 
 # Flatpak only
@@ -316,10 +395,13 @@ credential file only once.
 
 ## Backup & Restore
 
-Backs up and restores application configuration to/from a network share. All operations are tagged `never` and **will not run** during a normal full run — they must be explicitly requested.
+Backs up and restores application configuration to/from a network share.
+
+- **Backup** is tagged `never` and will **never run automatically** — it must be triggered explicitly with `--tags backup`.
+- **Restore** runs automatically when `run_config.restore: true` is set in `vars/run_config.yml`, or explicitly with `--tags restore`.
 
 - **Flatpak**: config from `~/.var/app/<app-id>/` — app list sourced from `vars/app_catalog.yml`
-- **RPM**: config paths declared in `vars/rpm_configs.yml` — opt-in registry, supports multiple directories per app
+- **RPM**: config paths declared in `vars/config_registry.yml` — opt-in registry, covers RPM packages, Flatpak overrides, AppImages, and other non-RPM configs
 
 ### Configuration
 
@@ -340,12 +422,12 @@ backup_monthly_months: 6  # monthly snapshots to keep (0 = disabled)
 
 > **Avoid `/tmp` for staging:** on most Fedora systems `/tmp` is a `tmpfs` (RAM-backed). Large archives can exhaust memory. The defaults use `~/.cache/` which stays on disk.
 
-### RPM config registry (`vars/rpm_configs.yml`)
+### Config registry (`vars/config_registry.yml`)
 
-Edit this file to declare which RPM-installed apps have configuration worth backing up:
+Edit this file to declare which apps have configuration worth backing up. The registry covers RPM packages, Flatpak overrides, AppImages, and other non-RPM entries (fish shell, GNOME desktop, pipewire, etc.):
 
 ```yaml
-rpm_configs:
+config_registry:
   code:
     paths:
       - ~/.config/Code/User        # multiple paths per app are supported
@@ -390,10 +472,17 @@ ansible-playbook fedora-do.yml -K -J --tags flatpak-restore
 ansible-playbook fedora-do.yml -K -J --tags rpm-restore
 ```
 
-Extracts `*_latest.tar.gz` from the share and rsync's each entry back to its original location. Run after a fresh install once apps have been installed:
+Extracts `*_latest.tar.gz` from the share and rsync's each entry back to its original location. The simplest way to run a full setup including restore is to set `run_config.restore: true` in `vars/run_config.yml` and run without any `--tags` flag:
 
 ```bash
-ansible-playbook fedora-do.yml -K -J --tags "always,all-apps,restore"
+# Set run_config.restore: true (and run_config.niri: true if applicable) then:
+ansible-playbook fedora-do.yml -K -J
+```
+
+Alternatively, trigger restore explicitly after apps are installed:
+
+```bash
+ansible-playbook fedora-do.yml -K -J --tags restore
 ```
 
 ---
