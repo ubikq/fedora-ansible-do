@@ -37,7 +37,7 @@ This Ansible playbook automates the post-install configuration of Fedora Worksta
 
 ### Feature Roadmap
 
-- Add Winboat installation and configuration
+- Placeholder for planned new features
 
 ---
 
