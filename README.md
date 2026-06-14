@@ -200,7 +200,7 @@ ansible-playbook fedora-do.yml -K
 ansible-playbook fedora-do.yml -K -e "run_config={niri: true}" --tags niri
 ```
 
-> **Note:** A flag set to `false` in `run_config.yml` will also suppress the group when that tag is used explicitly via `--tags`. Use the `-e` override above for ad-hoc runs of disabled groups.
+> **Note:** For most groups, a flag set to `false` in `run_config.yml` will also suppress the group when that tag is used explicitly via `--tags`. Use the `-e` override shown above for ad-hoc runs of disabled groups. Exception: `restore` and its sub-tags (`flatpak-restore`, `rpm-restore`) always run when explicitly tagged, regardless of the `run_config.restore` setting.
 
 ---
 
@@ -239,7 +239,7 @@ ansible-playbook fedora-do.yml -K -e "run_config={niri: true}" --tags niri
 | `cleanup` | dnf autoremove, cache clean, Flatpak updates — runs on full run or `--tags cleanup` |
 | `niri` | niri compositor + DankMaterialShell — excluded from default run unless `run_config.niri: true`; use `-e "run_config={niri: true}"` to run standalone |
 | `backup` | Run both Flatpak and RPM config backup — **never runs automatically**, must be explicitly tagged |
-| `restore` | Run both Flatpak and RPM config restore — runs automatically when `run_config.restore: true`, or explicitly with `--tags restore` |
+| `restore` | Run both Flatpak and RPM config restore — runs automatically when `run_config.restore: true` in a default run, or always when explicitly tagged with `--tags restore` |
 | `flatpak-backup` | Flatpak config backup only (`~/.var/app` → SMB share) |
 | `flatpak-restore` | Flatpak config restore only (SMB share → `~/.var/app`) |
 | `rpm-backup` | RPM app config backup only (paths from `vars/config_registry.yml` → SMB share) |

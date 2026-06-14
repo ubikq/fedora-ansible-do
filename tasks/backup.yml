@@ -11,8 +11,7 @@
 # TAGS:
 #   backup / flatpak-backup / rpm-backup   → tagged 'never', explicit --tags only
 #   restore / flatpak-restore / rpm-restore → run when run_config.restore is true,
-#                                             or explicitly with --tags restore
-#                                             (override flag: -e "run_config={restore: true}")
+#                                             OR when explicitly requested via --tags restore
 #
 # NOTE: tags must appear on the include_tasks statements themselves, not only
 # inside the included files. include_tasks is dynamic — Ansible cannot see
@@ -25,11 +24,17 @@
 
 - ansible.builtin.include_tasks: backup/flatpak-restore.yml
   tags: [restore, flatpak-restore]
-  when: run_config.restore | default(false)
+  when: >-
+    (run_config.restore | default(false))
+    or ('restore' in ansible_run_tags)
+    or ('flatpak-restore' in ansible_run_tags)
 
 - ansible.builtin.include_tasks: backup/rpm-backup.yml
   tags: [never, backup, rpm-backup]
 
 - ansible.builtin.include_tasks: backup/rpm-restore.yml
   tags: [restore, rpm-restore]
-  when: run_config.restore | default(false)
+  when: >-
+    (run_config.restore | default(false))
+    or ('restore' in ansible_run_tags)
+    or ('rpm-restore' in ansible_run_tags)
