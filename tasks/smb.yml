@@ -41,6 +41,12 @@
         name: cifs-utils
         state: present
 
+    - name: "SMB | Load cifs kernel module"
+      become: true
+      community.general.modprobe:
+        name: cifs
+        state: present
+
     - name: "SMB | Ensure /etc/samba directory exists"
       become: true
       ansible.builtin.file:
