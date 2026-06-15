@@ -117,17 +117,17 @@ ansible-galaxy collection install community.general ansible.posix
 # 2. Review and adjust which groups run by default
 # Edit vars/run_config.yml — enable niri, restore, or disable groups you don't need
 
-# 3. Set up Git identity
+# 3. (Optional) Set up Git identity — only needed if you enable run_config.git_config: true
 cp vars/git.yml.template vars/git.yml
 # Edit vars/git.yml with your name and email (this file is gitignored)
 
-# 4. Set up secrets for SMB mounts
+# 4. (Optional) Set up secrets for SMB mounts — only needed if you enable run_config.smb: true
 cp vars/secrets.yml.template vars/secrets.yml
 # Edit vars/secrets.yml with real credentials, then encrypt:
 ansible-vault encrypt vars/secrets.yml
 
 # 5. Run the full setup (no --tags = groups run per vars/run_config.yml)
-ansible-playbook fedora-do.yml -K -J
+ansible-playbook fedora-do.yml -K
 
 # 6. Log out and back in (or reboot)
 ```
@@ -157,15 +157,15 @@ run_config:
   apps_gaming:        false  # reserved — no active apps
 
   # ── System Services ─────────────────────────────────────────────────────────
-  docker:         true
-  virtualization: true
-  smb:            true
+  docker:         false   # requires Docker CE repo — disabled by default
+  virtualization: false   # KVM/QEMU stack — disabled by default
+  smb:            false   # requires vars/secrets.yml — disabled by default
 
   # ── Desktop Environment ──────────────────────────────────────────────────────
   gnome:      true
   fonts:      true
   shell:      true
-  git_config: true
+  git_config: false   # requires vars/git.yml — disabled by default
 
   # ── Opt-in (set true to include in a default run) ────────────────────────────
   niri:    false   # Niri compositor + DankMaterialShell
@@ -185,12 +185,11 @@ run_config:
 ansible-playbook fedora-do.yml -K -J
 ```
 
-**Minimal setup — skip SMB, RPM Fusion, and gaming:**
+**Enable Docker and virtualisation for a dev workstation:**
 ```bash
 # Set in vars/run_config.yml:
-#   rpm_fusion: false
-#   smb: false
-#   apps_gaming: false   (already false by default)
+#   docker:         true
+#   virtualization: true
 ansible-playbook fedora-do.yml -K
 ```
 
@@ -225,13 +224,13 @@ ansible-playbook fedora-do.yml -K -e "run_config={niri: true}"
 | `system-update` | DNF config tune + full `dnf upgrade --refresh` — also tagged `always` (runs in all modes); use `--tags system-update` to run standalone |
 | `rpm-fusion` | RPM Fusion repos, FFmpeg, `@multimedia` codecs — also tagged `always` (runs in all modes); use `--tags rpm-fusion` to run standalone |
 | `all-apps` | Shortcut: installs every app category at once (tools through gaming) |
-| `tools` | btrfs-assistant, eza, bat, fzf, fastfetch, tldr, restic, syncthing, doublecmd-qt6, pavucontrol, Cockpit plugins + Bazaar, Warehouse, Flatseal, GearLever, Dolphin, Meld, FSearch, CockpitClient, Solaar |
+| `tools` | btrfs-assistant, eza, bat, fzf, fastfetch, micro, tldr, restic, doublecmd-qt6, Cockpit plugins + Bazaar, Warehouse, Flatseal, GearLever, Dolphin, Kate, CockpitClient, Meld |
 | `desktop` | GNOME Tweaks, dconf Editor + PeaZip, Extension Manager |
-| `development` | VS Code (RPM, via Microsoft repo) |
-| `productivity` | LibreOffice, TickTick, Bitwarden, Obsidian, Logseq, Actual Budget, Foliate, Okular |
-| `communication` | Brave Browser (RPM, for PWA support), Vivaldi, Floorp, Chrome |
-| `graphics` | nomacs, Krita, FreeCAD |
-| `media` | mpv, Haruna (RPM), Jellyfin Desktop, HandBrake, yt-dlp |
+| `development` | *(no active apps by default — uncomment packages in `vars/app_catalog.yml` to enable)* |
+| `productivity` | Bitwarden, Obsidian, MarkText, Foliate, Okular |
+| `communication` | Brave Browser (RPM, for PWA support), Vivaldi, Floorp |
+| `graphics` | nomacs, Krita |
+| `media` | mpv, Haruna (RPM), HandBrake, yt-dlp |
 | `gaming` | *(no active apps — category reserved)* |
 | `docker` | Docker CE, containerd, compose plugin |
 | `virt` | KVM/QEMU, libvirt, virt-manager — full virtualisation stack |
@@ -413,10 +412,10 @@ Backs up and restores application configuration to/from a network share.
 Edit **`vars/backup.yml`** to set destination paths and retention (shared between Flatpak and RPM):
 
 ```yaml
-flatpak_backup_base_dir: "~/Mounts/backups/config-backups/flatpak"
+flatpak_backup_base_dir: "~/Mounts/backups/linux-backups/fedora/config-flatpak"
 flatpak_backup_tmp_dir:  "~/.cache/flatpak_backup_staging"
 
-rpm_backup_base_dir: "~/Mounts/backups/config-backups/rpm"
+rpm_backup_base_dir: "~/Mounts/backups/linux-backups/fedora/config-rpm"
 rpm_backup_tmp_dir:  "~/.cache/rpm_backup_staging"
 
 backup_max_archives:  5   # max dated archives to keep

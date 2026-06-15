@@ -8,9 +8,9 @@
 # Set a flag to false to skip that group on a default run.
 # Set niri or restore to true to include those opt-in groups in a default run.
 #
-# Note: --tags / --skip-tags still work for targeted ad-hoc runs, but a
-# flag set to false here will also suppress tasks when that tag is used
-# explicitly. To temporarily override: -e "run_config={niri: true}"
+# Note: Explicit --tags always run regardless of the flags below.
+# Use these flags to control what runs in a default run (no --tags).
+# To temporarily override for a single run: -e "run_config={niri: true}"
 # =============================================================================
 
 run_config:
@@ -21,25 +21,25 @@ run_config:
   firmware:      true   # fwupdmgr metadata refresh + firmware updates
 
   # ── Applications ────────────────────────────────────────────────────────────
-  apps_tools:         true   # CLI tools, Cockpit, Syncthing, doublecmd, pavucontrol, etc.
+  apps_tools:         true   # CLI tools, Cockpit, doublecmd, Bazaar, Warehouse, Dolphin, Kate, etc.
   apps_desktop:       true   # GNOME Tweaks, dconf Editor, PeaZip, Extension Manager
-  apps_development:   true   # VS Code (RPM, via Microsoft repo)
-  apps_productivity:  true   # LibreOffice, TickTick, Bitwarden, Obsidian, Actual Budget, etc.
-  apps_communication: true   # Brave Browser (RPM), Vivaldi, Floorp, Chrome
-  apps_graphics:      true   # nomacs, Krita, FreeCAD
-  apps_media:         true   # mpv, Haruna, Jellyfin Desktop, HandBrake, yt-dlp
+  apps_development:   true   # No active apps by default — uncomment in vars/app_catalog.yml
+  apps_productivity:  true   # Bitwarden, Obsidian, MarkText, Foliate, Okular
+  apps_communication: true   # Brave Browser (RPM), Vivaldi, Floorp
+  apps_graphics:      true   # nomacs, Krita
+  apps_media:         true   # mpv, Haruna (RPM), HandBrake, yt-dlp
   apps_gaming:        false  # Reserved — no active apps
 
   # ── System Services ─────────────────────────────────────────────────────────
-  docker:         true  # Docker CE + Compose plugin + docker service + user group
-  virtualization: true  # KVM/QEMU, @virtualization group, libvirtd, libvirt/kvm groups
-  smb:            true  # SMB/CIFS credential files, fstab entries, mount operations
+  docker:         false  # Docker CE + Compose plugin + docker service + user group
+  virtualization: false  # KVM/QEMU, @virtualization group, libvirtd, libvirt/kvm groups
+  smb:            false  # SMB/CIFS credential files, fstab entries, mount operations
 
   # ── Desktop Environment ──────────────────────────────────────────────────────
   gnome:      true   # GNOME dconf settings (dark mode, Dash-to-Dock, Night Light, etc.)
   fonts:      true   # Noto, Roboto, JetBrains Mono, Fira Code, Cascadia Code + fc-cache
   shell:      true   # fish shell + Fisher + Tide + starship prompt
-  git_config: true   # Git user.name/email, default branch, GNOME Keyring credential helper
+  git_config: false   # Git user.name/email, default branch, GNOME Keyring credential helper
 
   # ── Compositor (opt-in — set true to include in a default run) ──────────────
   niri: false   # Niri compositor + DankMaterialShell
