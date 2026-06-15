@@ -40,19 +40,19 @@ config_registry:
   # syncthing - Manual configuration required; config restore risks unexpected data sync behaviour
   doublecmd-qt6:
     paths:
-      - ~/.config/doublecmd          # Main instance
-      - ~/.config/doublecmd-dev      # Maintain custom tabs for dev work
+      - ~/.config/doublecmd
+    #   - ~/.config/doublecmd-dev      # personal dual-instance setup — uncomment if needed
     files:
       - ~/.local/share/applications/doublecmd-qt6.desktop
-      - ~/.local/share/applications/doublecmd-qt6-dev.desktop
+    #   - ~/.local/share/applications/doublecmd-qt6-dev.desktop
 
   # ── Desktop ───────────────────────────────────────────────────────────────────
   # (GNOME desktop config backed up under Non-RPM entries below)
 
   # ── Development ───────────────────────────────────────────────────────────────
-  code:
-    paths:
-      - ~/.config/Code               # settings.json, keybindings.json, snippets/
+  # code:
+  #   paths:
+  #     - ~/.config/Code               # settings.json, keybindings.json, snippets/
 
   # ── Productivity ──────────────────────────────────────────────────────────────
   # (no RPM packages with persistent configuration)
@@ -127,44 +127,44 @@ config_registry:
       - ~/.config/niri
       - ~/.local/state/DankMaterialShell
 
-  appimage-shutterencoder:
-    no_package_check: true
-    paths:
-      - ~/Shutter Encoder
+  # appimage-shutterencoder:
+  #   no_package_check: true
+  #   paths:
+  #     - ~/Shutter Encoder
 
   # Winboat windows docker VM config. VM inage is backed up using Zerobyterestic.
-  winboat:
-    no_package_check: true
-    paths:
-      - ~/.config/winboat
-      - ~/.winboat
+  # winboat:
+  #   no_package_check: true
+  #   paths:
+  #     - ~/.config/winboat
+  #     - ~/.winboat
 
   # Config stereo upscaling for youtube audio through 5.1 back speakers
-  pipewire-config-51:
-    no_package_check: true
-    paths: []
-    files:
-      - ~/.config/pipewire/pipewire-pulse.conf.d/40-youtube-upmix.conf
+  # pipewire-config-51:
+  #   no_package_check: true
+  #   paths: []
+  #   files:
+  #     - ~/.config/pipewire/pipewire-pulse.conf.d/40-youtube-upmix.conf
 
   # Change audio device to digital spidf 5.1
-  wireplumber_state:
-    no_package_check: true
-    paths:
-      - ~/.local/state/wireplumber
+  # wireplumber_state:
+  #   no_package_check: true
+  #   paths:
+  #     - ~/.local/state/wireplumber
 
   # ── Docker configuration files (no_package_check: true) ───────────────────────
   # Zerobyte backup automation config database
-  zerobyte:
-    no_package_check: true
-    paths:
-      - ~/.config-docker/zerobyte
-    exclude:
-      - config/restic              # restic cache — inaccessible, excluded from backup
+  # zerobyte:
+  #   no_package_check: true
+  #   paths:
+  #     - ~/.config-docker/zerobyte
+  #   exclude:
+  #     - config/restic              # restic cache — inaccessible, excluded from backup
 
-  dockhand:
-    no_package_check: true
-    paths:
-      - ~/.config-docker/dockhand
-    exclude:
-      - config/.encryption_key
+  # dockhand:
+  #   no_package_check: true
+  #   paths:
+  #     - ~/.config-docker/dockhand
+  #   exclude:
+  #     - config/.encryption_key
 
