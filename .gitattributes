@@ -1,1 +1,3 @@
-apps.yml merge=ours-yml
+vars/app_catalog.yml    merge=ours-yml
+vars/config_registry.yml merge=ours-yml
+vars/run_config.yml     merge=ours-yml
