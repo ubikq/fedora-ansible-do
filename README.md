@@ -525,3 +525,4 @@ This playbook *installs* third-party software at runtime but does not bundle or 
 - **RPM Fusion nonfree** packages may include proprietary software (see the disclaimer section above).
 - **Fisher** (MIT) and **Tide** (MIT) are downloaded at runtime; their licenses are independent of this project.
 - **Ansible collections** used (`community.general`, `ansible.posix`) are GPL-compatible.
+
