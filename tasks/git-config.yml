@@ -10,7 +10,7 @@
 
 - name: "Git | Configure global settings"
   tags: git-config
-  when: run_config.git_config | default(true)
+  when: (run_config.git_config | default(true)) or ('git-config' in ansible_run_tags)
   block:
     - name: "Git | Set user name"
       community.general.git_config:

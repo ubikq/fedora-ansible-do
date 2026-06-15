@@ -56,7 +56,7 @@
   loop: "{{ app_catalog.tools.flatpak | default([], true) }}"
   register: _fp_tools
   failed_when: false
-  when: run_config.apps_tools | default(true)
+  when: (run_config.apps_tools | default(true)) or ('tools' in ansible_run_tags)
   tags: tools
 
 - name: "Flatpak [tools] | Track results"
@@ -78,7 +78,7 @@
   loop: "{{ app_catalog.desktop.flatpak | default([], true) }}"
   register: _fp_desktop
   failed_when: false
-  when: run_config.apps_desktop | default(true)
+  when: (run_config.apps_desktop | default(true)) or ('desktop' in ansible_run_tags)
   tags: desktop
 
 - name: "Flatpak [desktop] | Track results"
@@ -100,7 +100,7 @@
   loop: "{{ app_catalog.development.flatpak | default([], true) }}"
   register: _fp_development
   failed_when: false
-  when: run_config.apps_development | default(true)
+  when: (run_config.apps_development | default(true)) or ('development' in ansible_run_tags)
   tags: development
 
 - name: "Flatpak [development] | Track results"
@@ -122,7 +122,7 @@
   loop: "{{ app_catalog.productivity.flatpak | default([], true) }}"
   register: _fp_productivity
   failed_when: false
-  when: run_config.apps_productivity | default(true)
+  when: (run_config.apps_productivity | default(true)) or ('productivity' in ansible_run_tags)
   tags: productivity
 
 - name: "Flatpak [productivity] | Track results"
@@ -141,7 +141,7 @@
   changed_when: false
   failed_when: false
   when:
-    - run_config.apps_productivity | default(true)
+    - (run_config.apps_productivity | default(true)) or ('productivity' in ansible_run_tags)
     - "'org.libreoffice.LibreOffice' in (app_catalog.productivity.flatpak | default([]))"
   tags: productivity
 
@@ -150,7 +150,7 @@
   ansible.builtin.command:
     cmd: dnf remove -y 'libreoffice*'
   when:
-    - run_config.apps_productivity | default(true)
+    - (run_config.apps_productivity | default(true)) or ('productivity' in ansible_run_tags)
     - "'org.libreoffice.LibreOffice' in (app_catalog.productivity.flatpak | default([]))"
     - (_lo_rpm_check.stdout | default('')) | length > 0
   register: _lo_dnf_remove_result
@@ -177,7 +177,7 @@
   loop: "{{ app_catalog.communication.flatpak | default([], true) }}"
   register: _fp_communication
   failed_when: false
-  when: run_config.apps_communication | default(true)
+  when: (run_config.apps_communication | default(true)) or ('communication' in ansible_run_tags)
   tags: communication
 
 - name: "Flatpak [communication] | Track results"
@@ -199,7 +199,7 @@
   loop: "{{ app_catalog.graphics.flatpak | default([], true) }}"
   register: _fp_graphics
   failed_when: false
-  when: run_config.apps_graphics | default(true)
+  when: (run_config.apps_graphics | default(true)) or ('graphics' in ansible_run_tags)
   tags: graphics
 
 - name: "Flatpak [graphics] | Track results"
@@ -221,7 +221,7 @@
   loop: "{{ app_catalog.media.flatpak | default([], true) }}"
   register: _fp_media
   failed_when: false
-  when: run_config.apps_media | default(true)
+  when: (run_config.apps_media | default(true)) or ('media' in ansible_run_tags)
   tags: media
 
 - name: "Flatpak [media] | Track results"
@@ -243,7 +243,7 @@
   loop: "{{ app_catalog.gaming.flatpak | default([], true) }}"
   register: _fp_gaming
   failed_when: false
-  when: run_config.apps_gaming | default(false)
+  when: (run_config.apps_gaming | default(false)) or ('gaming' in ansible_run_tags)
   tags: gaming
 
 - name: "Flatpak [gaming] | Track results"

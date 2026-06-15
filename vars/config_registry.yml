@@ -15,6 +15,9 @@
 #       - ~/path/to/config/dir   # directories — contents synced recursively
 #     files:
 #       - ~/path/to/file.conf    # individual files (optional key)
+#     exclude:
+#       - relative/pattern       # rsync --exclude patterns relative to each path (optional key)
+#       - path/with spaces/ok    # spaces in pattern names are supported
 #
 # Behaviour:
 #   - Package names are validated via rpm -q (unless no_package_check: true).
@@ -57,7 +60,15 @@ config_registry:
   # ── Communication ─────────────────────────────────────────────────────────────
   brave-browser:
     paths:
-      - ~/.config/BraveSoftware
+      - ~/.config/BraveSoftware/Brave-Browser
+    exclude:
+      - ShaderCache
+      - GrShaderCache
+      - GraphiteDawnCache
+      - component_crx_cache
+      - extensions_crx_cache
+      - Default/Service Worker/CacheStorage
+      - Default/Service Worker/ScriptCache
 
   # ── Graphics ──────────────────────────────────────────────────────────────────
   # (no RPM packages with persistent configuration)
@@ -87,7 +98,7 @@ config_registry:
       - ~/.local/share/fonts                 # User-installed fonts
       - ~/.local/share/backgrounds           # Custom wallpapers
       - ~/.local/share/icons                 # Icons
-      - ~/.local/share/applications                # .desktop files for WPA apps etc used for app launcher and DMS panel
+      - ~/.local/share/applications          # .desktop files for WPA apps etc used for app launcher and DMS panel
     files:
       - ~/.config/dconf/dconf-settings.ini   # The dconf database is backed and restored as part of tasks
       # - ~/.config/dconf/user               # Alternative: raw dconf binary (not human readable)
@@ -121,10 +132,39 @@ config_registry:
     paths:
       - ~/Shutter Encoder
 
+  # Winboat windows docker VM config. VM inage is backed up using Zerobyterestic.
+  winboat:
+    no_package_check: true
+    paths:
+      - ~/.config/winboat
+      - ~/.winboat
+
   # Config stereo upscaling for youtube audio through 5.1 back speakers
   pipewire-config-51:
     no_package_check: true
     paths: []
     files:
       - ~/.config/pipewire/pipewire-pulse.conf.d/40-youtube-upmix.conf
+
+  # Change audio device to digital spidf 5.1
+  wireplumber_state:
+    no_package_check: true
+    paths:
+      - ~/.local/state/wireplumber
+
+  # ── Docker configuration files (no_package_check: true) ───────────────────────
+  # Zerobyte backup automation config database
+  zerobyte:
+    no_package_check: true
+    paths:
+      - ~/.config-docker/zerobyte
+    exclude:
+      - config/restic              # restic cache — inaccessible, excluded from backup
+
+  dockhand:
+    no_package_check: true
+    paths:
+      - ~/.config-docker/dockhand
+    exclude:
+      - config/.encryption_key
 

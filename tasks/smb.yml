@@ -24,14 +24,14 @@
          + ' not decrypted. Create it from vars/secrets.yml.template,'
          + ' add credentials, then run: ansible-vault encrypt vars/secrets.yml'] }}
   when:
-    - run_config.smb | default(true)
+    - (run_config.smb | default(true)) or ('smb' in ansible_run_tags)
     - smb_credentials is not defined
   tags: [smb, backup, restore, flatpak-backup, flatpak-restore, rpm-backup, rpm-restore]
 
 # ── SMB setup (skipped when credentials are unavailable) ─────────────────────
 - name: "SMB | Configure shares"
   when:
-    - run_config.smb | default(true)
+    - (run_config.smb | default(true)) or ('smb' in ansible_run_tags)
     - smb_credentials is defined
   tags: [smb, backup, restore, flatpak-backup, flatpak-restore, rpm-backup, rpm-restore]
   block:

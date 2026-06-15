@@ -9,7 +9,7 @@
 
 - name: "Virt | KVM, QEMU and libvirt setup"
   tags: virt
-  when: run_config.virtualization | default(true)
+  when: (run_config.virtualization | default(true)) or ('virt' in ansible_run_tags)
   block:
     - name: "Virt | Install virtualization group"
       become: true

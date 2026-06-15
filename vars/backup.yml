@@ -9,7 +9,7 @@
 
 # ── Flatpak backup paths ──────────────────────────────────────────────────────
 # Destination directory on the backup share (created if absent).
-flatpak_backup_base_dir: "{{ ansible_facts.user_dir }}/Mounts/backups/config-backups/flatpak"
+flatpak_backup_base_dir: "{{ ansible_facts.user_dir }}/Mounts/backups/linux-backups/fedora/config-flatpak"
 
 # Local staging area used during backup and restore.
 # Defaults to ~/.cache to stay on-disk. Avoid /tmp — on most Fedora systems
@@ -17,7 +17,8 @@ flatpak_backup_base_dir: "{{ ansible_facts.user_dir }}/Mounts/backups/config-bac
 flatpak_backup_tmp_dir: "{{ ansible_facts.user_dir }}/.cache/flatpak_backup_staging"
 
 # ── RPM backup paths ──────────────────────────────────────────────────────────
-rpm_backup_base_dir: "{{ ansible_facts.user_dir }}/Mounts/backups/config-backups/rpm"
+rpm_backup_base_dir: "{{ ansible_facts.user_dir }}/Mounts/backups/linux-backups/fedora/config-rpm"
+
 rpm_backup_tmp_dir: "{{ ansible_facts.user_dir }}/.cache/rpm_backup_staging"
 
 # ── Shared retention settings (apply to both Flatpak and RPM) ─────────────────

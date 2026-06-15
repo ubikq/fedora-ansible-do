@@ -4,8 +4,8 @@
 # =============================================================================
 
 - name: "DNF | Optimise /etc/dnf/dnf.conf"
-  tags: always
-  when: run_config.system_update | default(true)
+  tags: [always, system-update]
+  when: (run_config.system_update | default(true)) or ('system-update' in ansible_run_tags)
   block:
     - name: "DNF | Apply dnf.conf options"
       become: true
@@ -22,8 +22,8 @@
         _run_errors: "{{ (_run_errors | default([])) + ['DNF: /etc/dnf/dnf.conf could not be updated — default DNF settings will be used'] }}"
 
 - name: "DNF | Full system update"
-  tags: always
-  when: run_config.system_update | default(true)
+  tags: [always, system-update]
+  when: (run_config.system_update | default(true)) or ('system-update' in ansible_run_tags)
   block:
     - name: "DNF | Full system update"
       become: true

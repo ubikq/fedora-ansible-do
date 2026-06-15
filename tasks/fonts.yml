@@ -22,7 +22,7 @@
     - cascadia-code-fonts
   register: _fonts_result
   failed_when: false
-  when: run_config.fonts | default(true)
+  when: (run_config.fonts | default(true)) or ('fonts' in ansible_run_tags)
   tags: fonts
 
 - name: "Fonts | Track results"

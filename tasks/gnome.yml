@@ -9,7 +9,7 @@
 # ── Dark theme RPM ────────────────────────────────────────────────────────────
 - name: "GNOME | Dark theme setup"
   tags: gnome
-  when: run_config.gnome | default(true)
+  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
   block:
     - name: "GNOME | Install adw-gtk3 dark theme"
       become: true
@@ -24,7 +24,7 @@
 # ── Dash-to-Dock extension ────────────────────────────────────────────────────
 - name: "GNOME | Dash-to-Dock extension install"
   tags: gnome
-  when: run_config.gnome | default(true)
+  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
   block:
     - name: "GNOME | Install Dash-to-Dock GNOME shell extension"
       become: true
@@ -39,7 +39,7 @@
 # ── Extension Manager Flatpak ─────────────────────────────────────────────────
 - name: "GNOME | Extension Manager install"
   tags: gnome
-  when: run_config.gnome | default(true)
+  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
   block:
     - name: "GNOME | Install Extension Manager Flatpak"
       community.general.flatpak:
@@ -55,7 +55,7 @@
 # ── Apply dconf settings ──────────────────────────────────────────────────────
 - name: "GNOME | Apply interface settings"
   tags: gnome
-  when: run_config.gnome | default(true)
+  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
   block:
     - name: "GNOME | Apply interface settings"
       community.general.dconf:
@@ -70,7 +70,7 @@
 
 - name: "GNOME | Apply window manager settings"
   tags: gnome
-  when: run_config.gnome | default(true)
+  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
   block:
     - name: "GNOME | Apply window manager settings"
       community.general.dconf:
@@ -85,7 +85,7 @@
 
 - name: "GNOME | Apply privacy settings"
   tags: gnome
-  when: run_config.gnome | default(true)
+  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
   block:
     - name: "GNOME | Apply privacy settings"
       community.general.dconf:
@@ -100,7 +100,7 @@
 
 - name: "GNOME | Apply power settings"
   tags: gnome
-  when: run_config.gnome | default(true)
+  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
   block:
     - name: "GNOME | Apply power settings"
       community.general.dconf:
@@ -115,7 +115,7 @@
 
 - name: "GNOME | Apply Night Light settings"
   tags: gnome
-  when: run_config.gnome | default(true)
+  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
   block:
     - name: "GNOME | Apply Night Light settings"
       community.general.dconf:
@@ -130,7 +130,7 @@
 
 - name: "GNOME | Apply Nautilus settings"
   tags: gnome
-  when: run_config.gnome | default(true)
+  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
   block:
     - name: "GNOME | Apply Nautilus file manager settings"
       community.general.dconf:
@@ -146,7 +146,7 @@
 # ── Enable extensions ─────────────────────────────────────────────────────────
 - name: "GNOME | Enable shell extensions"
   tags: gnome
-  when: run_config.gnome | default(true)
+  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
   block:
     - name: "GNOME | Read currently enabled extensions"
       ansible.builtin.command:
@@ -183,7 +183,7 @@
 # ── Dash-to-Dock configuration ────────────────────────────────────────────────
 - name: "GNOME | Configure Dash-to-Dock settings"
   tags: gnome
-  when: run_config.gnome | default(true)
+  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
   block:
     - name: "GNOME | Configure Dash-to-Dock settings"
       community.general.dconf:
@@ -203,7 +203,7 @@
 # strips GDM of its session defaults and breaks the login screen.
 - name: "GNOME | Configure GDM greeter HiDPI scaling"
   tags: gnome
-  when: run_config.gnome | default(true)
+  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
   block:
     - name: "GNOME | Ensure GDM dconf profile is present"
       become: true

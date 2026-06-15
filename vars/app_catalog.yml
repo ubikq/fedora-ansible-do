@@ -32,6 +32,7 @@ app_catalog:
       # - fuse
       # - fuse3
       # - fuse3-libs
+      - fuse-libs
       # - cifs-utils
       # - nfs-utils
       # - pciutils
@@ -47,7 +48,8 @@ app_catalog:
       - p7zip
       - p7zip-plugins
       - rsync                     # Required by backup/restore tasks
-    flatpak: []
+    flatpak:
+      - com.freerdp.FreeRDP
 
   # ── System tools, utilities & virtualization ───────────────────────────────
   tools:
@@ -111,7 +113,7 @@ app_catalog:
       # - make
       # - cmake
       # - nodejs
-      # - npm
+      - npm
       # - golang
       # - python3-devel
     flatpak:

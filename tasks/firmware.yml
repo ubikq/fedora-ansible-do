@@ -8,7 +8,7 @@
 
 - name: "Firmware | Refresh and apply firmware updates"
   tags: firmware
-  when: run_config.firmware | default(true)
+  when: (run_config.firmware | default(true)) or ('firmware' in ansible_run_tags)
   block:
     - name: "Firmware | Refresh firmware metadata"
       become: true

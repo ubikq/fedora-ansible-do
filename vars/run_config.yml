@@ -31,9 +31,9 @@ run_config:
   apps_gaming:        false  # Reserved — no active apps
 
   # ── System Services ─────────────────────────────────────────────────────────
-  docker:        true   # Docker CE + Compose plugin + docker service + user group
+  docker:         true  # Docker CE + Compose plugin + docker service + user group
   virtualization: true  # KVM/QEMU, @virtualization group, libvirtd, libvirt/kvm groups
-  smb:           true   # SMB/CIFS credential files, fstab entries, mount operations
+  smb:            true  # SMB/CIFS credential files, fstab entries, mount operations
 
   # ── Desktop Environment ──────────────────────────────────────────────────────
   gnome:      true   # GNOME dconf settings (dark mode, Dash-to-Dock, Night Light, etc.)

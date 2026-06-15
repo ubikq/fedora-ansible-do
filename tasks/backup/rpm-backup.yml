@@ -203,6 +203,16 @@
       loop_control:
         label: "{{ item.0.key }}: {{ item.1 }}"
 
+    - name: "RPM Backup | Write rsync exclude files"
+      ansible.builtin.copy:
+        content: "{{ item.value.exclude | join('\n') }}\n"
+        dest: "{{ _rb_tmp_dir }}/excludes-{{ item.key }}.txt"
+        mode: '0600'
+      loop: "{{ config_registry | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+      when: item.value.exclude | default([]) | length > 0
+
     - name: "RPM Backup | Sync existing config paths to staging"
       ansible.posix.synchronize:
         src: "{{ item.1 | replace('~', ansible_facts.user_dir) }}/"
@@ -212,6 +222,10 @@
              | replace('~', '') }}/
         recursive: true
         delete: true
+        rsync_opts: >-
+          {{ (['--exclude-from=' + _rb_tmp_dir + '/excludes-' + item.0.key + '.txt']
+              if (item.0.value.exclude | default([]) | length > 0)
+              else []) }}
       loop: "{{ _rb_existing_paths }}"
       loop_control:
         label: "{{ item.0.key }}: {{ item.1 }}"

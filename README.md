@@ -194,13 +194,16 @@ ansible-playbook fedora-do.yml -K -J
 ansible-playbook fedora-do.yml -K
 ```
 
-**Override a flag on the command line without editing the vars file:**
+**Run a group standalone without editing the vars file:**
 ```bash
-# Run niri setup when run_config.niri is false
-ansible-playbook fedora-do.yml -K -e "run_config={niri: true}" --tags niri
+# Explicit --tags always run regardless of run_config settings:
+ansible-playbook fedora-do.yml -K --tags niri
+
+# To include niri in all future default runs without editing the file:
+ansible-playbook fedora-do.yml -K -e "run_config={niri: true}"
 ```
 
-> **Note:** For most groups, a flag set to `false` in `run_config.yml` will also suppress the group when that tag is used explicitly via `--tags`. Use the `-e` override shown above for ad-hoc runs of disabled groups. Exception: `restore` and its sub-tags (`flatpak-restore`, `rpm-restore`) always run when explicitly tagged, regardless of the `run_config.restore` setting.
+> **Note:** Explicit `--tags` always win over `run_config.yml`. Running `--tags foo` will execute that group regardless of the corresponding flag in `run_config.yml`. Use `run_config.yml` flags to control what runs in a *default run* (no `--tags` flag). To include an opt-in group in all future default runs, set it to `true` in `run_config.yml` instead.
 
 ---
 
@@ -218,7 +221,9 @@ ansible-playbook fedora-do.yml -K -e "run_config={niri: true}" --tags niri
 
 | Tag | What it covers |
 |---|---|
-| `always` | DNF tune, system update, base packages, Flathub setup — runs in all modes (RPM Fusion and other groups are controlled by `run_config.yml`) |
+| `always` | Base packages, Flathub setup, Brave/VS Code repo setup — runs in all modes. Also includes `system-update` and `rpm-fusion` tasks (both carry the `always` tag) |
+| `system-update` | DNF config tune + full `dnf upgrade --refresh` — also tagged `always` (runs in all modes); use `--tags system-update` to run standalone |
+| `rpm-fusion` | RPM Fusion repos, FFmpeg, `@multimedia` codecs — also tagged `always` (runs in all modes); use `--tags rpm-fusion` to run standalone |
 | `all-apps` | Shortcut: installs every app category at once (tools through gaming) |
 | `tools` | btrfs-assistant, eza, bat, fzf, fastfetch, tldr, restic, syncthing, doublecmd-qt6, pavucontrol, Cockpit plugins + Bazaar, Warehouse, Flatseal, GearLever, Dolphin, Meld, FSearch, CockpitClient, Solaar |
 | `desktop` | GNOME Tweaks, dconf Editor + PeaZip, Extension Manager |
@@ -446,7 +451,7 @@ config_registry:
       - ~/.local/share/flatpak/overrides
 ```
 
-Use `paths:` for directories and `files:` for individual files (`files:` is optional). Missing entries are silently skipped. A warning is added to the report if a package is not installed or if all entries for a package are absent.
+Use `paths:` for directories and `files:` for individual files. Use `exclude:` to pass rsync exclusion patterns relative to each `paths:` entry — useful for skipping cache subdirectories or other inaccessible paths (e.g. `exclude: [config/restic]`). All three keys are optional. Missing entries are silently skipped. A warning is added to the report if a package is not installed or if all entries for a package are absent.
 
 ### Backup
 
