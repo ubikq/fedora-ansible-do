@@ -31,12 +31,18 @@
       ansible.builtin.dnf:
         name: gnome-shell-extension-dash-to-dock
         state: present
+      register: _dash_to_dock_install
 
     - name: "GNOME | Mark Dash-to-Dock as user-installed (prevent autoremove)"
       become: true
       ansible.builtin.command:
         cmd: dnf mark user gnome-shell-extension-dash-to-dock
       changed_when: false
+
+    - name: "GNOME | Record reboot requirement after fresh install"
+      ansible.builtin.set_fact:
+        _reboot_reasons: "{{ _reboot_reasons + ['Dash-to-Dock installed — log out and back in to activate'] }}"
+      when: _dash_to_dock_install is changed
   rescue:
     - name: "GNOME | Record Dash-to-Dock install failure"
       ansible.builtin.set_fact:
