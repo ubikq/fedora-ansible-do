@@ -39,9 +39,9 @@
         cmd: dnf mark user gnome-shell-extension-dash-to-dock
       changed_when: false
 
-    - name: "GNOME | Record reboot requirement after fresh install"
+    - name: "GNOME | Set activation flag when package is freshly installed"
       ansible.builtin.set_fact:
-        _reboot_reasons: "{{ _reboot_reasons + ['Dash-to-Dock installed — log out and back in to activate'] }}"
+        _gnome_ext_needs_activate: true
       when: _dash_to_dock_install is changed
   rescue:
     - name: "GNOME | Record Dash-to-Dock install failure"
@@ -167,10 +167,32 @@
         state: present
       register: _gnome_ext_result
 
-    - name: "GNOME | Record reboot requirement"
+    - name: "GNOME | Try in-session enable via D-Bus"
+      ansible.builtin.command:
+        cmd: >-
+          gdbus call --session
+            --dest org.gnome.Shell.Extensions
+            --object-path /org/gnome/Shell/Extensions
+            --method org.gnome.Shell.Extensions.EnableExtension
+            "{{ item }}"
+      loop: "{{ gnome_enabled_extensions }}"
+      register: _gnome_dbus_enables
+      failed_when: false
+      changed_when: false
+      when: _gnome_ext_result is changed or (_gnome_ext_needs_activate | default(false))
+
+    - name: "GNOME | Record reboot requirement if in-session activation incomplete"
       ansible.builtin.set_fact:
         _reboot_reasons: "{{ _reboot_reasons + ['GNOME extensions changed — log out and back in'] }}"
-      when: _gnome_ext_result is changed
+      when: >-
+        (_gnome_ext_result is changed or (_gnome_ext_needs_activate | default(false))) and
+        (
+          _gnome_dbus_enables is skipped or
+          (_gnome_dbus_enables.results | default([])
+            | selectattr('stdout', 'defined')
+            | selectattr('stdout', 'search', 'true')
+            | list | length) < (gnome_enabled_extensions | length)
+        )
   rescue:
     - name: "GNOME | Record extension enable failure"
       ansible.builtin.set_fact:
