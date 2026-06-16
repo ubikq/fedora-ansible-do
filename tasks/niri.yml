@@ -75,7 +75,7 @@
 # ── DMS configuration ─────────────────────────────────────────────────────────
 - name: "Niri | Deploy DMS settings.json"
   tags: niri
-  when: (run_config.niri | default(false)) or ('niri' in ansible_run_tags)
+  when: run_config.niri | default(false)
   block:
     - name: "Niri | Ensure DankMaterialShell config directory exists"
       ansible.builtin.file:
@@ -100,7 +100,7 @@
 # ── niri configuration ────────────────────────────────────────────────────────
 - name: "Niri | Check if syncthingtray flatpak is installed"
   tags: niri
-  when: (run_config.niri | default(false)) or ('niri' in ansible_run_tags)
+  when: run_config.niri | default(false)
   ansible.builtin.command:
     cmd: "flatpak info {{ niri_syncthingtray_flatpak }}"
   register: _niri_syncthingtray_check
@@ -109,7 +109,7 @@
 
 - name: "Niri | Deploy config.kdl"
   tags: niri
-  when: (run_config.niri | default(false)) or ('niri' in ansible_run_tags)
+  when: run_config.niri | default(false)
   block:
     - name: "Niri | Ensure niri config directory exists"
       ansible.builtin.file:
