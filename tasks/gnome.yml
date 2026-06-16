@@ -31,6 +31,12 @@
       ansible.builtin.dnf:
         name: gnome-shell-extension-dash-to-dock
         state: present
+
+    - name: "GNOME | Mark Dash-to-Dock as user-installed (prevent autoremove)"
+      become: true
+      ansible.builtin.command:
+        cmd: dnf mark install gnome-shell-extension-dash-to-dock
+      changed_when: false
   rescue:
     - name: "GNOME | Record Dash-to-Dock install failure"
       ansible.builtin.set_fact:
