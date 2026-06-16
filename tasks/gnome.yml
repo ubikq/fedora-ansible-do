@@ -35,28 +35,12 @@
     - name: "GNOME | Mark Dash-to-Dock as user-installed (prevent autoremove)"
       become: true
       ansible.builtin.command:
-        cmd: dnf mark install gnome-shell-extension-dash-to-dock
+        cmd: dnf mark user gnome-shell-extension-dash-to-dock
       changed_when: false
   rescue:
     - name: "GNOME | Record Dash-to-Dock install failure"
       ansible.builtin.set_fact:
         _run_errors: "{{ (_run_errors | default([])) + ['GNOME: Dash-to-Dock extension install failed'] }}"
-
-# ── Extension Manager Flatpak ─────────────────────────────────────────────────
-- name: "GNOME | Extension Manager install"
-  tags: gnome
-  when: (run_config.gnome | default(true)) or ('gnome' in ansible_run_tags)
-  block:
-    - name: "GNOME | Install Extension Manager Flatpak"
-      community.general.flatpak:
-        name: com.mattjakeman.ExtensionManager
-        state: present
-        method: system
-        remote: flathub
-  rescue:
-    - name: "GNOME | Record Extension Manager install failure"
-      ansible.builtin.set_fact:
-        _run_errors: "{{ (_run_errors | default([])) + ['GNOME: Extension Manager Flatpak install failed'] }}"
 
 # ── Apply dconf settings ──────────────────────────────────────────────────────
 - name: "GNOME | Apply interface settings"
