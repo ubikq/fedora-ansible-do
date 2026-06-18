@@ -110,9 +110,10 @@ fedora-ansible-do/
 The following is required to use the runbook post-installation of the base OS.
 
 ```bash
-# 1. Install Ansible and required collections
-sudo dnf install ansible python3-psutil
-ansible-galaxy collection install community.general ansible.posix
+# 1. Install Ansible
+# python3-psutil, community.general, and ansible.posix are required but should
+# already be present — installed alongside ansible or available by default.
+sudo dnf install ansible
 
 # 2. Review and adjust which groups run by default
 # Edit vars/run_config.yml — enable niri, restore, or disable groups you don't need
